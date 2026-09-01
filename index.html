@@ -388,26 +388,43 @@
   }
 .print-only{display:none;}
   @media print{
-    .print-only{display:block !important;font-size:11px;color:#333;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid #999;}
+    .print-only{display:block !important;font-size:14px;font-weight:500;color:#000;line-height:1.5;margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid #999;}
   }
   @media print{
-    body{background:#fff;padding:0;}
+    body{background:#fff;padding:0;font-size:12px;}
     .tabbar{display:none;}
-    .appbar{background:#fff !important;color:#000;box-shadow:none;border-bottom:2px solid #000;border-radius:0;margin-bottom:8px;}
+    .wrap{max-width:none;padding:0 8px;}
+    .appbar{background:#fff !important;color:#000;box-shadow:none;border-bottom:2px solid #000;border-radius:0;margin-bottom:6px;padding:6px 0 8px;}
     .appbar-icon{display:none;}
-    .appbar .sub{color:#333;}
+    .appbar h1{font-size:16px;}
+    .appbar .sub{color:#333;font-size:11px;}
     #panel-input{display:none;}
-    .panel{box-shadow:none;border:1px solid #999;break-inside:avoid;}
-    .result-hero{background:#fff !important;color:#000;box-shadow:none;border:2px solid #000;}
+    .panel{box-shadow:none;border:1px solid #999;break-inside:avoid;padding:10px 12px;margin-bottom:8px;border-radius:4px;}
+    .panel h2{font-size:13px;margin-bottom:7px;}
+    .result-hero{background:#fff !important;color:#000;box-shadow:none;border:2px solid #000;padding:10px 14px;margin-bottom:8px;border-radius:4px;
+      display:grid;grid-template-columns:1fr auto;column-gap:18px;align-items:center;text-align:left;}
     .result-hero::before{display:none;}
-    .result-hero .label,.result-hero .sub2{color:#333;}
-    .mini-stat{background:#f3f3f3 !important;border:1px solid #999;}
-    .mini-stat .l,.mini-stat .v{color:#000;}
+    .result-hero .label{grid-column:1;grid-row:1;font-size:15px;font-weight:700;color:#000;margin-bottom:4px;text-align:center;}
+    .result-hero .amount{grid-column:1;grid-row:2;font-size:25px;text-align:center;}
+    .result-hero .sub2{grid-column:1;grid-row:3;color:#000;font-size:16px;font-weight:700;margin-top:6px;text-align:center;}
+    .mini-stats{grid-column:2;grid-row:1/4;display:flex;flex-direction:column;margin-top:0;gap:6px;width:170px;}
+    .mini-stat{background:#f3f3f3 !important;border:1px solid #999;padding:6px 10px;}
+    .mini-stat .l{font-size:10px;color:#000;}
+    .mini-stat .v{font-size:13px;color:#000;}
     #btn_print{display:none;}
+    #btn_print_detail{display:none;}
+    table.ledger{font-size:11pt;}
+    table.ledger th,table.ledger td{padding:4px 6px;}
     table.ledger tr:hover td{background:none;}
     tr.total td{background:#eee !important;}
-    .note,.note-list{font-size:11pt;line-height:1.6;}
-    .foot{margin-top:10px;}
+    tr.section-head td{padding:6px 6px 4px;}
+    .note,.note-list{font-size:11pt;line-height:1.7;}
+    .note{padding:11px 13px;}
+    #panel-notes{page-break-before:always;break-before:page;margin-top:0;}
+    .foot{margin-top:12px;font-size:10px;line-height:1.6;}
+    .dperson-head{margin:10px 0 6px;}
+    .dblock{padding:8px 9px;margin-bottom:6px;}
+    .dtrace{font-size:10px;}
   }
 </style>
 </head>
@@ -536,7 +553,7 @@
     </table>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="panel-notes">
     <h2><span class="dot"></span>制度上の位置づけ</h2>
     <div class="note">
       <ul class="note-list" id="notes"></ul>
@@ -550,7 +567,12 @@
 
   <div id="tab-detail" style="display:none;">
     <div class="panel" style="margin-top:12px;">
-      <h2><span class="dot"></span>整合性チェック</h2>
+      <h2><span class="dot"></span>整合性チェック
+        <button id="btn_print_detail" onclick="window.print()" style="margin-left:auto;font-size:11px;font-weight:600;color:var(--navy);background:var(--gold-bg);border:1px solid #ecdcb3;border-radius:20px;padding:5px 12px;cursor:pointer;display:flex;align-items:center;gap:4px;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          印刷
+        </button>
+      </h2>
       <div id="d_consistency"></div>
     </div>
     <div id="d_person_h"></div>
@@ -588,19 +610,19 @@ function zatsuShotoku(incomeYen, age){
   }
 }
 
+// 令和7年度税制改正（令和7年分以後の所得税・令和8年度住民税から適用）で48万円→58万円に引き上げ
 function haigushaKoujoTable(spouseIncome, isRoujin, forJuuminzei){
   const norm = forJuuminzei ? 330000 : 380000;
   const full = forJuuminzei ? (isRoujin?380000:330000) : (isRoujin?480000:380000);
-  if(spouseIncome<=480000) return full;
-  if(spouseIncome<=950000) return norm;
-  if(spouseIncome<=1000000) return forJuuminzei?330000:360000;
-  if(spouseIncome<=1050000) return forJuuminzei?310000:310000;
-  if(spouseIncome<=1100000) return forJuuminzei?260000:260000;
-  if(spouseIncome<=1150000) return forJuuminzei?210000:210000;
-  if(spouseIncome<=1200000) return forJuuminzei?160000:160000;
-  if(spouseIncome<=1250000) return forJuuminzei?110000:110000;
-  if(spouseIncome<=1300000) return forJuuminzei?60000:60000;
-  if(spouseIncome<=1330000) return forJuuminzei?30000:30000;
+  if(spouseIncome<=580000) return full;
+  if(spouseIncome<=1000000) return norm;
+  if(spouseIncome<=1050000) return 310000;
+  if(spouseIncome<=1100000) return 260000;
+  if(spouseIncome<=1150000) return 210000;
+  if(spouseIncome<=1200000) return 160000;
+  if(spouseIncome<=1250000) return 110000;
+  if(spouseIncome<=1300000) return 60000;
+  if(spouseIncome<=1330000) return 30000;
   return 0;
 }
 
@@ -613,17 +635,31 @@ function shotokuzeiRate(taxable){
   return taxable*0.33-1536000;
 }
 
+// 令和7年度税制改正で給与所得控除の最低保障額が55万円→65万円に引き上げ。
+// これに伴い、収入190万円以下は一律65万円（旧：162.5万円以下55万円＋162.5〜180万円の中間区分は廃止・統合）
 function kyuyoShotoku(incomeYen){
   const inc = incomeYen;
   if(inc<=0) return 0;
   let koujo;
-  if(inc<=1625000) koujo = 550000;
-  else if(inc<=1800000) koujo = inc*0.4-100000;
+  if(inc<=1900000) koujo = 650000;
   else if(inc<=3600000) koujo = inc*0.3+80000;
   else if(inc<=6600000) koujo = inc*0.2+440000;
   else if(inc<=8500000) koujo = inc*0.1+1100000;
   else koujo = 1950000;
   return Math.max(0, inc-koujo);
+}
+
+// 令和7・8年分の所得税基礎控除（合計所得655万円以下は時限的に引き上げ、656万円〜2,350万円以下は58万円）
+function shotokuzeiKisoKoujo(goukei){
+  if(goukei<=1320000) return 950000;
+  if(goukei<=3360000) return 880000;
+  if(goukei<=4890000) return 680000;
+  if(goukei<=6550000) return 630000;
+  if(goukei<=23500000) return 580000;
+  if(goukei<=24000000) return 480000;
+  if(goukei<=24500000) return 320000;
+  if(goukei<=25000000) return 160000;
+  return 0;
 }
 
 // 公的年金等と給与所得の両方がある人向けの所得金額調整控除（給与所得から差し引く）
@@ -671,7 +707,7 @@ function calc(){
   const hGoukei = hZatsu + hKyuyo;
   const wGoukei = wZatsu + wKyuyo;
 
-  const wIsDependent = (!wNone) && wGoukei<=480000; // 住民税非課税限度額の「扶養人数」カウント用（控除対象配偶者、48万円以下）
+  const wIsDependent = (!wNone) && wGoukei<=580000; // 住民税非課税限度額の「扶養人数」カウント用（控除対象配偶者、令和8年度から58万円）
   const wCanSpouseKoujo = (!wNone) && wGoukei<=1330000 && hGoukei<=10000000; // 配偶者控除・配偶者特別控除の対象範囲（合計所得133万円以下、夫の所得1,000万円以下）
   const wIsRoujin = wAge>=70;
 
@@ -741,6 +777,10 @@ function calc(){
   )) : 0;
   const kokuhoTotal = iryo+shien+kosodate+kaigoNoufu;
 
+  // 国保税は加入者数で均等折半（制度上の正式な按分ルールはなく、個人別の手取り試算のための便宜上の按分）
+  const hKokuhoBubun = hInNK ? round100(kokuhoTotal/hoken_hisya) : 0;
+  const wKokuhoBubun = wInNK ? round100(kokuhoTotal/hoken_hisya) : 0;
+
   // ---- 住民税：非課税判定（広陵町公式基準・合計所得金額ベース） ----
   function juuminHantei(age, goukei, hasHaiguusha){
     const fuyou = hasHaiguusha?1:0;
@@ -766,18 +806,8 @@ function calc(){
     return {kintouwari, shotokuwari, total:kintouwari+shotokuwari};
   }
 
-  const shakaihokenTotalForH = kokuhoTotal;
-
   const hHaiguusha = wCanSpouseKoujo ? haigushaKoujoTable(wGoukei, wIsRoujin, true) : 0;
   const hHantei = juuminHantei(hAge, hGoukei, wIsDependent);
-  let hKaigoTemp = 72000;
-  const hJuumin = juuminzei(hGoukei, hHantei, hHaiguusha, shakaihokenTotalForH+hKaigoTemp);
-
-  const wHantei = (!wNone) ? juuminHantei(wAge, wGoukei, false) : {kintouHikazei:true, shotokuHikazei:true};
-  const wJuumin = (!wNone) ? juuminzei(wGoukei, wHantei, 0, 0) : {kintouwari:0,shotokuwari:0,total:0};
-
-  const hJuuminCourse = hJuumin.total>0 ? '課税' : '非課税';
-  const wJuuminCourse = wNone ? '-' : (wJuumin.total>0 ? '課税' : '非課税');
 
   // ---- 介護保険料（65歳以上のみ第1号被保険者。段階判定は合計所得金額ベース） ----
   function kaigoDankai(age, goukei, incomeYen, isKazeisha, setaiHasKazeisha){
@@ -803,24 +833,38 @@ function calc(){
     }
   }
 
-  const setaiZeninHikazei = (hJuumin.kintouwari===0) && (wNone || wJuumin.kintouwari===0);
-  const hKaigo = kaigoDankai(hAge, hGoukei, hIncome, hJuumin.kintouwari>0, hJuumin.kintouwari===0 && !setaiZeninHikazei ? true : (wJuumin.kintouwari>0));
-  const wKaigo = wNone ? {label:'-',amount:0} : kaigoDankai(wAge, wGoukei, wIncome, wJuumin.kintouwari>0, wJuumin.kintouwari===0 && hJuumin.kintouwari>0);
+  // 段階判定には、住民税の均等割課税/非課税の判定が要るので、社会保険料控除を確定する前の
+  // 仮の住民税（社会保険料控除は概算値で先に判定）で課税・非課税を判定する
+  const hJuuminTemp = juuminzei(hGoukei, hHantei, hHaiguusha, kokuhoTotal+72000);
+  const wHantei = (!wNone) ? juuminHantei(wAge, wGoukei, false) : {kintouHikazei:true, shotokuHikazei:true};
+  const wJuuminTemp = (!wNone) ? juuminzei(wGoukei, wHantei, 0, 0) : {kintouwari:0,shotokuwari:0,total:0};
+
+  const setaiZeninHikazei = (hJuuminTemp.kintouwari===0) && (wNone || wJuuminTemp.kintouwari===0);
+  const hKaigo = kaigoDankai(hAge, hGoukei, hIncome, hJuuminTemp.kintouwari>0, hJuuminTemp.kintouwari===0 && !setaiZeninHikazei ? true : (wJuuminTemp.kintouwari>0));
+  const wKaigo = wNone ? {label:'-',amount:0} : kaigoDankai(wAge, wGoukei, wIncome, wJuuminTemp.kintouwari>0, wJuuminTemp.kintouwari===0 && hJuuminTemp.kintouwari>0);
 
   // 給与から天引きされる社会保険料（健康保険・厚生年金、本人負担分）
   const hShahoRyou = hShaho ? shahoHonninFutan(hAge, hSalary) : {kenkou:0, nenkin:0, total:0};
   const wShahoRyou = wShaho ? shahoHonninFutan(wAge, wSalary) : {kenkou:0, nenkin:0, total:0};
 
-  // 再計算：介護保険料・社会保険料が確定したので社会保険料控除を正しい値に更新して住民税を再計算
-  const shakaihokenActual = kokuhoTotal + hKaigo.amount + wKaigo.amount + hShahoRyou.total + wShahoRyou.total;
-  const hJuumin2 = juuminzei(hGoukei, hHantei, hHaiguusha, shakaihokenActual);
+  // 社会保険料控除は「本人が実際に負担した分」を本人の控除にする（国保按分・介護保険料・社保料それぞれ本人分のみ）
+  const hShakaihoken = hKokuhoBubun + hKaigo.amount + hShahoRyou.total;
+  const wShakaihoken = wKokuhoBubun + wKaigo.amount + wShahoRyou.total;
 
-  // ---- 所得税 ----
+  const hJuumin2 = juuminzei(hGoukei, hHantei, hHaiguusha, hShakaihoken);
+  const wJuumin = (!wNone) ? juuminzei(wGoukei, wHantei, 0, wShakaihoken) : {kintouwari:0,shotokuwari:0,total:0};
+
+  const hJuuminCourse = hJuumin2.total>0 ? '課税' : '非課税';
+  const wJuuminCourse = wNone ? '-' : (wJuumin.total>0 ? '課税' : '非課税');
+
+  // ---- 所得税（令和7・8年分は合計所得に応じた時限的な基礎控除の上乗せがある） ----
   const hHaiguushaKoujoZei = wCanSpouseKoujo ? haigushaKoujoTable(wGoukei, wIsRoujin, false) : 0;
-  const hKazeiZei = Math.max(0, hGoukei - 480000 - hHaiguushaKoujoZei - shakaihokenActual);
+  const hKisoKoujoZei = shotokuzeiKisoKoujo(hGoukei);
+  const hKazeiZei = Math.max(0, hGoukei - hKisoKoujoZei - hHaiguushaKoujoZei - hShakaihoken);
   const hZeigaku = Math.round(shotokuzeiRate(hKazeiZei)*1.021/100)*100;
 
-  const wKazeiZei = wNone?0:Math.max(0, wGoukei - 480000);
+  const wKisoKoujoZei = wNone ? 0 : shotokuzeiKisoKoujo(wGoukei);
+  const wKazeiZei = wNone?0:Math.max(0, wGoukei - wKisoKoujoZei - wShakaihoken);
   const wZeigaku = wNone?0:Math.round(shotokuzeiRate(wKazeiZei)*1.021/100)*100;
 
   // ---- 集計 ----
@@ -835,9 +879,7 @@ function calc(){
   const fmt = n=>'¥'+Math.round(n).toLocaleString();
   const fmtMan = n=>Math.round(n/10000).toLocaleString()+'万円';
 
-  // ---- 個人別の手取り（国保税は人数で均等折半。制度上の正式な按分ルールはなく、便宜上の按分） ----
-  const hKokuhoBubun = hInNK ? round100(kokuhoTotal/hoken_hisya) : 0;
-  const wKokuhoBubun = wInNK ? round100(kokuhoTotal/hoken_hisya) : 0;
+  // ---- 個人別の手取り ----
   const hNet = hIncome+hSalary - hZeigaku - hJuumin2.total - hKaigo.amount - hShahoRyou.total - hKokuhoBubun;
   const wNet = wNone ? 0 : (wIncome+wSalary - wZeigaku - wJuumin.total - wKaigo.amount - wShahoRyou.total - wKokuhoBubun);
 
@@ -853,7 +895,7 @@ function calc(){
     iryo, shien, kosodate, kaigoNoufu, kokuhoTotal, hKokuhoBubun, wKokuhoBubun,
     hHantei, wHantei, hHaiguusha, hHaiguushaKoujoZei, hJuumin2, wJuumin,
     hKaigo, wKaigo, hShahoRyou, wShahoRyou,
-    shakaihokenActual, hKazeiZei, hZeigaku, wKazeiZei, wZeigaku,
+    hShakaihoken, wShakaihoken, hKisoKoujoZei, wKisoKoujoZei, hKazeiZei, hZeigaku, wKazeiZei, wZeigaku,
     totalIncome, totalTax, totalJuumin, totalKaigo, totalShaho, totalDeduct, totalNet,
     hNet, wNet, fmt
   };
@@ -870,8 +912,8 @@ function calc(){
   } else {
     psum += '　／　単身世帯';
   }
-  psum += '　（広陵町・令和8年度基準で試算　'+(new Date()).toLocaleDateString('ja-JP')+'）';
-  document.getElementById('print_summary').textContent = psum;
+  psum += '<br>（広陵町・令和8年度基準で試算　'+(new Date()).toLocaleDateString('ja-JP')+'）';
+  document.getElementById('print_summary').innerHTML = psum;
 
   document.getElementById('c_h_income').textContent = fmt(hIncome);
   document.getElementById('c_w_income').textContent = wNone?'-':fmt(wIncome);
@@ -918,8 +960,8 @@ function calc(){
   document.getElementById('m_juumin').textContent = fmt(totalJuumin/12);
   document.getElementById('tag_juumin').innerHTML = totalJuumin===0 ? '<span class="tag exempt">世帯非課税</span>' : '';
 
-  document.getElementById('c_h_kaigo').textContent = fmt(hKaigo.amount)+'（'+hKaigo.label+'）';
-  document.getElementById('c_w_kaigo').textContent = wNone?'-':(fmt(wKaigo.amount)+'（'+wKaigo.label+'）');
+  document.getElementById('c_h_kaigo').innerHTML = fmt(hKaigo.amount)+'<br><span style="font-size:0.85em;color:var(--muted);font-weight:400;">（'+hKaigo.label+'）</span>';
+  document.getElementById('c_w_kaigo').innerHTML = wNone?'-':(fmt(wKaigo.amount)+'<br><span style="font-size:0.85em;color:var(--muted);font-weight:400;">（'+wKaigo.label+'）</span>');
   document.getElementById('c_total_kaigo').textContent = fmt(totalKaigo);
   document.getElementById('m_kaigo').textContent = fmt(totalKaigo/12);
 
@@ -1049,11 +1091,13 @@ function renderDetail(D){
 
     // 所得税
     const haiguushaKoujoZei = side==='h' ? D.hHaiguushaKoujoZei : 0;
+    const kisoKoujoZei = side==='h' ? D.hKisoKoujoZei : D.wKisoKoujoZei;
+    const shakaihokenKojin = side==='h' ? D.hShakaihoken : D.wShakaihoken;
     html += '<div class="dblock"><h3>所得税 <span class="result">'+fmt(zeigaku)+'</span></h3><table class="dtrace">'
       + row('合計所得金額', fmt(goukei))
-      + row('基礎控除', '－'+fmt(480000), 'sub')
+      + row('基礎控除（令和7・8年分は合計所得に応じた時限的な上乗せあり）', '－'+fmt(kisoKoujoZei), 'sub')
       + (side==='h' ? row('配偶者控除', haiguushaKoujoZei>0 ? '－'+fmt(haiguushaKoujoZei) : '対象外', 'sub') : '')
-      + (side==='h' ? row('社会保険料控除（国保・介護保険・社保料の実額合計）', '－'+fmt(D.shakaihokenActual), 'sub') : '')
+      + row('社会保険料控除（本人負担分：国保按分・介護保険・社保料の合計）', '－'+fmt(shakaihokenKojin), 'sub')
       + row('課税所得', fmt(kazei), 'op')
       + row('税率区分の適用', kazei<=1950000?'195万円以下：5%':(kazei<=3300000?'195〜330万円：10%（控除97,500円）':(kazei<=6950000?'330〜695万円：20%（控除427,500円）':'695万円超：上位区分')), 'sub')
       + row('復興特別所得税', '基準額×2.1%を加算', 'sub')
@@ -1112,7 +1156,7 @@ function renderDetail(D){
 
     // 配偶者控除・被扶養者判定（夫のみ、対象がいる場合）
     if(side==='h' && !D.wNone){
-      const kubun = !D.wCanSpouseKoujo ? '対象外（合計所得133万円超、または夫の所得1,000万円超）' : (D.wIsDependent ? '配偶者控除（合計所得48万円以下）' : '配偶者特別控除（合計所得48万円超133万円以下・段階的に減少）');
+      const kubun = !D.wCanSpouseKoujo ? '対象外（合計所得133万円超、または夫の所得1,000万円超）' : (D.wIsDependent ? '配偶者控除（合計所得58万円以下）' : '配偶者特別控除（合計所得58万円超133万円以下・段階的に減少）');
       html += '<div class="dblock"><h3>配偶者控除・被扶養者の判定</h3><table class="dtrace">'
         + row('妻の合計所得金額', fmt(D.wGoukei))
         + row('区分', kubun)
