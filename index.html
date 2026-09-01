@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1c2b3a">
+<meta name="description" content="広陵町の令和8年度税制・国保税率・介護保険料に基づく年金手取り計算アプリ">
+<title>年金手取り計算（広陵町）</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --navy:#16232e;
+    --navy-2:#1f3245;
+    --navy-3:#2c4359;
+    --paper:#f5f1e8;
+    --card:#ffffff;
+    --line:#e4ddc9;
+    --gold:#a3782f;
+    --gold-deep:#7a5a22;
+    --gold-bg:#faf1da;
+    --red:#a4384a;
+    --red-bg:#fbeaee;
+    --green:#276b52;
+    --green-bg:#e6f3ec;
+    --muted:#767065;
+    --shadow:0 1px 2px rgba(22,35,46,.06), 0 6px 16px rgba(22,35,46,.07);
+    --shadow-sm:0 1px 3px rgba(22,35,46,.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    background:
+      radial-gradient(1200px 500px at 50% -120px, rgba(163,120,47,.08), transparent 60%),
+      var(--paper);
+    color:var(--navy);
+  }
+  .appbar{
+    background:linear-gradient(155deg, var(--navy) 0%, var(--navy-2) 100%);
+    color:#fff;
+    padding:22px 20px 26px;
+    border-radius:0 0 22px 22px;
+    box-shadow:var(--shadow);
+    margin-bottom:-18px;
+    position:relative;
+    overflow:hidden;
+  }
+  .appbar::after{
+    content:"";
+    position:absolute;
+    right:-40px;top:-40px;
+    width:160px;height:160px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(163,120,47,.35), transparent 70%);
+  }
+  .appbar-inner{display:flex;align-items:center;gap:12px;position:relative;}
+  .appbar-icon{
+    flex:0 0 auto;
+    width:42px;height:42px;
+    border-radius:12px;
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.18);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .appbar-icon svg{width:22px;height:22px;stroke:#e9c77a;}
+  .appbar h1{
+    font-size:18px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:.02em;
+  }
+  .appbar .sub{
+    font-size:12px;
+    color:rgba(255,255,255,.68);
+    margin:2px 0 0;
+  }
+
+  .wrap{max-width:720px;margin:0 auto;padding:16px 16px 24px;}
+
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px 16px;
+    margin-bottom:14px;
+    box-shadow:var(--shadow-sm);
+    position:relative;
+  }
+  .panel h2{
+    font-size:13px;
+    font-weight:700;
+    margin:0 0 12px;
+    color:var(--navy);
+    display:flex;
+    align-items:center;
+    gap:7px;
+  }
+  .panel h2 .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--gold);
+    display:inline-block;
+  }
+
+  .person-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .person{
+    border:1px solid var(--line);
+    border-radius:13px;
+    padding:12px 12px 13px;
+    background:linear-gradient(180deg, #fffef9, #fdfbf4);
+  }
+  .person-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .avatar{
+    width:26px;height:26px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;
+    color:#fff;
+    flex:0 0 auto;
+  }
+  .avatar.h{background:linear-gradient(150deg, var(--navy-3), var(--navy));}
+  .avatar.w{background:linear-gradient(150deg, #b5895a, var(--gold-deep));}
+  .person h3{
+    font-size:13.5px;
+    font-weight:700;
+    margin:0;
+    color:var(--navy);
+  }
+  .field{margin-bottom:9px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{
+    display:block;
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .field input[type=number]{
+    width:100%;
+    font-size:15px;
+    font-weight:500;
+    padding:7px 9px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+    color:var(--navy);
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .field input[type=number]:focus{
+    outline:none;
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(163,120,47,.15);
+  }
+  .field input[type=number]:disabled{
+    background:var(--paper);
+    color:var(--muted);
+  }
+  .unit{font-size:10.5px;color:var(--muted);margin-left:3px;font-weight:400;}
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--line);
+  }
+  .checkbox-row input{margin:0;width:15px;height:15px;accent-color:var(--gold-deep);}
+
+  .result-hero{
+    background:linear-gradient(160deg, var(--navy) 0%, var(--navy-3) 100%);
+    color:#fff;
+    border-radius:16px;
+    padding:20px 18px;
+    margin-bottom:14px;
+    text-align:center;
+    box-shadow:var(--shadow);
+    position:relative;
+    overflow:hidden;
+  }
+  .result-hero::before{
+    content:"";
+    position:absolute;
+    left:50%;top:-60px;
+    width:220px;height:220px;
+    transform:translateX(-50%);
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(233,199,122,.16), transparent 65%);
+  }
+  .result-hero .label{font-size:11.5px;color:rgba(255,255,255,.65);margin-bottom:6px;letter-spacing:.03em;position:relative;}
+  .result-hero .amount{font-size:32px;font-weight:700;letter-spacing:.01em;font-variant-numeric:tabular-nums;position:relative;}
+  .result-hero .sub2{font-size:11.5px;color:rgba(255,255,255,.6);margin-top:8px;position:relative;}
+  .mini-stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:14px;
+    position:relative;
+  }
+  .mini-stat{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:10px;
+    padding:8px 10px;
+    text-align:left;
+  }
+  .mini-stat .l{font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;}
+  .mini-stat .v{font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums;}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  table.ledger th,table.ledger td{
+    padding:8px 6px;
+    border-bottom:1px solid var(--line);
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  table.ledger th:first-child,table.ledger td:first-child{text-align:left;}
+  table.ledger th{
+    color:var(--muted);
+    font-weight:600;
+    font-size:12px;
+  }
+  table.ledger tr:hover td{background:rgba(163,120,47,.04);}
+  tr.total td{font-weight:700;border-top:2px solid var(--navy);border-bottom:none;background:var(--gold-bg);}
+  tr.total:first-of-type td{background:transparent;border-top:1px solid var(--line);}
+  tr.deduct td{color:var(--red);}
+  tr.section-head td{
+    background:var(--paper);
+    color:var(--gold-deep);
+    font-weight:700;
+    font-size:11.5px;
+    padding:8px 6px 5px;
+    border-bottom:1px solid var(--line);
+    letter-spacing:.02em;
+  }
+  .tag{
+    display:inline-block;
+    font-size:10px;
+    font-weight:600;
+    padding:2px 7px;
+    border-radius:20px;
+    margin-left:4px;
+  }
+  .tag.exempt{background:var(--green-bg);color:var(--green);}
+  .tag.taxed{background:var(--red-bg);color:var(--red);}
+  .note{
+    font-size:13px;
+    color:var(--navy-2);
+    line-height:1.7;
+    background:var(--gold-bg);
+    border:1px solid #ecdcb3;
+    padding:11px 13px;
+    margin-top:2px;
+    border-radius:10px;
+  }
+  .note-list{margin:0;padding-left:16px;}
+  .note-list li{margin-bottom:4px;}
+  .note-list li:last-child{margin-bottom:0;}
+  .foot{
+    font-size:10.5px;
+    color:var(--muted);
+    text-align:center;
+    margin-top:20px;
+    line-height:1.7;
+  }
+
+  .tabbar{
+    display:flex;
+    gap:6px;
+    margin:14px 0 4px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:4px;
+    box-shadow:var(--shadow-sm);
+  }
+  .tabbtn{
+    flex:1;
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    font-size:12.5px;
+    font-weight:600;
+    padding:9px 6px;
+    border-radius:9px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .tabbtn.active{
+    background:var(--navy);
+    color:#fff;
+  }
+
+  .dperson-head{
+    display:flex;align-items:center;gap:8px;
+    margin:18px 0 10px;
+  }
+  .dperson-head .avatar{width:24px;height:24px;font-size:11px;}
+  .dperson-head h2{font-size:15px;font-weight:700;margin:0;color:var(--navy);}
+
+  .dblock{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:13px 14px;
+    margin-bottom:10px;
+    box-shadow:var(--shadow-sm);
+  }
+  .dblock h3{
+    font-size:12px;
+    font-weight:700;
+    color:var(--gold-deep);
+    margin:0 0 9px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .dblock h3 .result{
+    font-size:14px;
+    font-weight:700;
+    color:var(--navy);
+    font-variant-numeric:tabular-nums;
+  }
+  .dtrace{width:100%;border-collapse:collapse;font-size:12px;}
+  .dtrace td{
+    padding:4px 2px;
+    border-bottom:1px dashed var(--line);
+    font-variant-numeric:tabular-nums;
+  }
+  .dtrace td:first-child{color:var(--muted);width:52%;}
+  .dtrace td:last-child{text-align:right;font-weight:600;color:var(--navy);}
+  .dtrace tr.sub td:first-child{padding-left:14px;color:var(--muted);font-weight:400;}
+  .dtrace tr.op td:first-child{color:var(--gold-deep);font-weight:600;}
+  .dtrace tr:last-child td{border-bottom:none;}
+  .dtrace tr.final td{font-weight:700;border-top:1.5px solid var(--navy);padding-top:6px;}
+  .dtrace tr.final td:last-child{color:var(--red);}
+  .dreason{
+    font-size:11px;
+    color:var(--navy-2);
+    background:var(--gold-bg);
+    border-radius:8px;
+    padding:7px 9px;
+    margin-top:8px;
+    line-height:1.6;
+  }
+  .dapprox{
+    display:inline-block;
+    font-size:9.5px;
+    font-weight:700;
+    color:var(--red);
+    background:var(--red-bg);
+    border-radius:10px;
+    padding:1px 6px;
+    margin-left:4px;
+  }
+  .dexact{
+    display:inline-block;
+    font-size:9.5px;
+    font-weight:700;
+    color:var(--green);
+    background:var(--green-bg);
+    border-radius:10px;
+    padding:1px 6px;
+    margin-left:4px;
+  }
+  .dconsist-ok{
+    font-size:12px;color:var(--green);background:var(--green-bg);
+    border-radius:8px;padding:8px 10px;line-height:1.7;
+  }
+  .dconsist-warn{
+    font-size:12px;color:var(--red);background:var(--red-bg);
+    border-radius:8px;padding:8px 10px;line-height:1.7;margin-bottom:6px;
+  }
+  @media (max-width:480px){
+    .person-grid{grid-template-columns:1fr;}
+    .result-hero .amount{font-size:27px;}
+    .mini-stats{grid-template-columns:1fr 1fr;}
+  }
+.print-only{display:none;}
+  @media print{
+    .print-only{display:block !important;font-size:11px;color:#333;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid #999;}
+  }
+  @media print{
+    body{background:#fff;padding:0;}
+    .tabbar{display:none;}
+    .appbar{background:#fff !important;color:#000;box-shadow:none;border-bottom:2px solid #000;border-radius:0;margin-bottom:8px;}
+    .appbar-icon{display:none;}
+    .appbar .sub{color:#333;}
+    #panel-input{display:none;}
+    .panel{box-shadow:none;border:1px solid #999;break-inside:avoid;}
+    .result-hero{background:#fff !important;color:#000;box-shadow:none;border:2px solid #000;}
+    .result-hero::before{display:none;}
+    .result-hero .label,.result-hero .sub2{color:#333;}
+    .mini-stat{background:#f3f3f3 !important;border:1px solid #999;}
+    .mini-stat .l,.mini-stat .v{color:#000;}
+    #btn_print{display:none;}
+    table.ledger tr:hover td{background:none;}
+    tr.total td{background:#eee !important;}
+    .note,.note-list{font-size:11pt;line-height:1.6;}
+    .foot{margin-top:10px;}
+  }
+</style>
+</head>
+<body>
+<div class="appbar">
+  <div class="wrap" style="padding:0;">
+    <div class="appbar-inner">
+      <div class="appbar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+      </div>
+      <div>
+        <h1>年金手取り計算</h1>
+        <p class="sub">広陵町・令和8年度税制／国保税率／介護保険料　基準</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="wrap">
+  <div class="print-only" id="print_summary"></div>
+
+  <div class="tabbar">
+    <button class="tabbtn active" id="tabbtn-simple" onclick="switchTab('simple')">簡易</button>
+    <button class="tabbtn" id="tabbtn-detail" onclick="switchTab('detail')">詳細（計算過程）</button>
+  </div>
+
+  <div id="tab-simple">
+  <div class="panel" id="panel-input" style="margin-top:12px;">
+    <h2><span class="dot"></span>入力</h2>
+    <div class="person-grid">
+      <div class="person">
+        <div class="person-head">
+          <span class="avatar h">夫</span>
+          <h3>夫</h3>
+        </div>
+        <div class="field">
+          <label>年齢</label>
+          <input type="number" id="h_age" value="65" min="60" max="90">
+        </div>
+        <div class="field">
+          <label>年金収入（年額）<span class="unit">万円</span></label>
+          <input type="number" id="h_pension" value="200" step="1" min="0">
+        </div>
+        <div class="field">
+          <label>給与収入（年額・あれば）<span class="unit">万円</span></label>
+          <input type="number" id="h_salary" value="0" step="1" min="0">
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="h_shaho">
+          <label for="h_shaho" style="margin:0;">給与先で社会保険（健康保険・厚生年金）に加入</label>
+        </div>
+      </div>
+      <div class="person">
+        <div class="person-head">
+          <span class="avatar w">妻</span>
+          <h3>妻</h3>
+        </div>
+        <div class="field">
+          <label>年齢</label>
+          <input type="number" id="w_age" value="65" min="60" max="90">
+        </div>
+        <div class="field">
+          <label>年金収入（年額）<span class="unit">万円</span></label>
+          <input type="number" id="w_pension" value="86.5" step="0.1" min="0">
+        </div>
+        <div class="field">
+          <label>給与収入（年額・あれば）<span class="unit">万円</span></label>
+          <input type="number" id="w_salary" value="0" step="1" min="0">
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="w_shaho">
+          <label for="w_shaho" style="margin:0;">給与先で社会保険（健康保険・厚生年金）に加入</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="w_none" onchange="document.getElementById('w_pension').disabled=this.checked;document.getElementById('w_salary').disabled=this.checked;document.getElementById('w_shaho').disabled=this.checked;calc();">
+          <label for="w_none" style="margin:0;">妻なし（単身世帯として計算）</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="result-hero">
+    <div class="label">世帯 手取り額（年額）</div>
+    <div class="amount" id="out_nettotal">-</div>
+    <div class="sub2" id="out_monthly">月額換算：-</div>
+    <div class="mini-stats">
+      <div class="mini-stat">
+        <div class="l">額面合計</div>
+        <div class="v" id="mini_income">-</div>
+      </div>
+      <div class="mini-stat">
+        <div class="l">控除合計</div>
+        <div class="v" id="mini_deduct">-</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="dot"></span>内訳
+      <button id="btn_print" onclick="window.print()" style="margin-left:auto;font-size:11px;font-weight:600;color:var(--navy);background:var(--gold-bg);border:1px solid #ecdcb3;border-radius:20px;padding:5px 12px;cursor:pointer;display:flex;align-items:center;gap:4px;">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        印刷
+      </button>
+    </h2>
+    <table class="ledger">
+      <tr><th>項目</th><th>夫</th><th>妻</th><th>世帯計</th><th>世帯・月額</th></tr>
+
+      <tr class="section-head"><td colspan="5">年金分</td></tr>
+      <tr><td>年金収入（額面）</td><td id="c_h_income">-</td><td id="c_w_income">-</td><td id="c_total_income">-</td><td>-</td></tr>
+      <tr><td>雑所得（年金控除後）</td><td id="c_h_zatsu">-</td><td id="c_w_zatsu">-</td><td>-</td><td>-</td></tr>
+
+      <tr id="row_salary_income" class="section-head"><td colspan="5">給与分</td></tr>
+      <tr id="row_salary_income2"><td>給与収入（額面）</td><td id="c_h_salary">-</td><td id="c_w_salary">-</td><td id="c_total_salary">-</td><td>-</td></tr>
+      <tr id="row_salary"><td>給与所得（給与控除後）</td><td id="c_h_kyuyo">-</td><td id="c_w_kyuyo">-</td><td>-</td><td>-</td></tr>
+      <tr id="row_shaho" class="deduct"><td>健康保険料（社保・本人負担）</td><td id="c_h_kenkou">-</td><td id="c_w_kenkou">-</td><td id="c_total_kenkou">-</td><td id="m_kenkou">-</td></tr>
+      <tr id="row_shaho2" class="deduct"><td>厚生年金保険料（社保・本人負担）</td><td id="c_h_nenkin">-</td><td id="c_w_nenkin">-</td><td id="c_total_nenkin">-</td><td id="m_nenkin">-</td></tr>
+
+      <tr class="section-head"><td colspan="5">合算（ここから先は年金・給与を合わせた金額で計算）</td></tr>
+      <tr class="total" style="background:transparent;border-top:1px solid var(--line);"><td>収入額面合計</td><td colspan="2"></td><td id="c_total_income_all">-</td><td id="m_income">-</td></tr>
+      <tr><td>合計所得金額</td><td id="c_h_goukei">-</td><td id="c_w_goukei">-</td><td>-</td><td>-</td></tr>
+      <tr class="deduct"><td>所得税</td><td id="c_h_tax">-</td><td id="c_w_tax">-</td><td id="c_total_tax">-</td><td id="m_tax">-</td></tr>
+      <tr class="deduct"><td>住民税 <span id="tag_juumin"></span></td><td id="c_h_juumin">-</td><td id="c_w_juumin">-</td><td id="c_total_juumin">-</td><td id="m_juumin">-</td></tr>
+      <tr class="deduct"><td>介護保険料 <span id="tag_kaigo"></span></td><td id="c_h_kaigo">-</td><td id="c_w_kaigo">-</td><td id="c_total_kaigo">-</td><td id="m_kaigo">-</td></tr>
+      <tr class="deduct"><td>国保税（世帯合算） <span id="tag_kokuho"></span></td><td colspan="2"></td><td id="c_total_kokuho">-</td><td id="m_kokuho">-</td></tr>
+      <tr class="total"><td>控除合計</td><td colspan="2"></td><td id="c_total_deduct">-</td><td id="m_deduct">-</td></tr>
+      <tr class="total"><td>手取り</td><td colspan="2"></td><td id="c_total_net">-</td><td id="m_net">-</td></tr>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2><span class="dot"></span>制度上の位置づけ</h2>
+    <div class="note">
+      <ul class="note-list" id="notes"></ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    前提：75歳未満は国保加入、年金収入のみで社会保険料実額（社保加入時を除く）は概算、扶養親族なしという前提です。配偶者控除・扶養判定・国保加入区分は入力に応じて自動判定されます。
+  </div>
+  </div>
+
+  <div id="tab-detail" style="display:none;">
+    <div class="panel" style="margin-top:12px;">
+      <h2><span class="dot"></span>整合性チェック</h2>
+      <div id="d_consistency"></div>
+    </div>
+    <div id="d_person_h"></div>
+    <div id="d_person_w"></div>
+    <div class="panel">
+      <h2><span class="dot"></span>世帯まとめ（額面と手取りの分離）</h2>
+      <table class="ledger" id="d_summary_table"></table>
+    </div>
+    <div class="foot">
+      基準：広陵町・令和8年度（国保税率・介護保険料第9期・住民税非課税限度額）／協会けんぽ奈良支部・令和8年度（社保料率）。
+      標準報酬月額は等級表を使わず年収ベースの概算です。国保税は加入者間で人数按分（均等折半）した参考値です。
+    </div>
+  </div>
+</div>
+
+<script>
+function toYen(man){return Math.round(man*10000);}
+function round100(y){return Math.floor(y/100)*100;}
+
+function zatsuShotoku(incomeYen, age){
+  const inc = incomeYen;
+  if(age>=65){
+    if(inc<=3300000) return Math.max(0, inc-1100000);
+    if(inc<=4100000) return inc*0.75-275000;
+    if(inc<=7700000) return inc*0.85-685000;
+    if(inc<=10000000) return inc*0.95-1455000;
+    return inc-1955000;
+  } else {
+    if(inc<=600000) return 0;
+    if(inc<=1300000) return inc-600000;
+    if(inc<=4100000) return inc*0.75-275000;
+    if(inc<=7700000) return inc*0.85-685000;
+    if(inc<=10000000) return inc*0.95-1455000;
+    return inc-1955000;
+  }
+}
+
+function haigushaKoujoTable(spouseIncome, isRoujin, forJuuminzei){
+  const norm = forJuuminzei ? 330000 : 380000;
+  const full = forJuuminzei ? (isRoujin?380000:330000) : (isRoujin?480000:380000);
+  if(spouseIncome<=480000) return full;
+  if(spouseIncome<=950000) return norm;
+  if(spouseIncome<=1000000) return forJuuminzei?330000:360000;
+  if(spouseIncome<=1050000) return forJuuminzei?310000:310000;
+  if(spouseIncome<=1100000) return forJuuminzei?260000:260000;
+  if(spouseIncome<=1150000) return forJuuminzei?210000:210000;
+  if(spouseIncome<=1200000) return forJuuminzei?160000:160000;
+  if(spouseIncome<=1250000) return forJuuminzei?110000:110000;
+  if(spouseIncome<=1300000) return forJuuminzei?60000:60000;
+  if(spouseIncome<=1330000) return forJuuminzei?30000:30000;
+  return 0;
+}
+
+function shotokuzeiRate(taxable){
+  if(taxable<=0) return 0;
+  if(taxable<=1950000) return taxable*0.05;
+  if(taxable<=3300000) return taxable*0.10-97500;
+  if(taxable<=6950000) return taxable*0.20-427500;
+  if(taxable<=9000000) return taxable*0.23-636000;
+  return taxable*0.33-1536000;
+}
+
+function kyuyoShotoku(incomeYen){
+  const inc = incomeYen;
+  if(inc<=0) return 0;
+  let koujo;
+  if(inc<=1625000) koujo = 550000;
+  else if(inc<=1800000) koujo = inc*0.4-100000;
+  else if(inc<=3600000) koujo = inc*0.3+80000;
+  else if(inc<=6600000) koujo = inc*0.2+440000;
+  else if(inc<=8500000) koujo = inc*0.1+1100000;
+  else koujo = 1950000;
+  return Math.max(0, inc-koujo);
+}
+
+// 公的年金等と給与所得の両方がある人向けの所得金額調整控除（給与所得から差し引く）
+function shotokuChousei(kyuyo, zatsu){
+  return Math.max(0, Math.min(kyuyo,100000) + Math.min(zatsu,100000) - 100000);
+}
+
+// 給与から天引きされる社会保険料（本人負担分）。協会けんぽ奈良支部・令和8年度料率（9.91%）＋
+// 子ども・子育て支援金率（0.23%）＋40〜64歳は介護保険料率（1.62%）を加算し、労使折半で2で割る。
+// 厚生年金保険料率は全国一律18.3%（本人負担9.15%）。標準報酬月額の上限にあわせ年収ベースで概算の上限を設ける。
+function shahoHonninFutan(age, salaryYen){
+  if(salaryYen<=0) return {kenkou:0, nenkin:0, total:0};
+  const kenkouBase = Math.min(salaryYen, 16680000); // 健康保険：標準報酬月額上限139万円×12
+  const kenkouRate = 0.0991 + 0.0023 + (age>=40 && age<65 ? 0.0162 : 0);
+  const kenkou = round100(kenkouBase*kenkouRate/2);
+  const nenkinBase = Math.min(salaryYen, 7800000); // 厚生年金：標準報酬月額上限65万円×12
+  const nenkin = round100(nenkinBase*0.183/2);
+  return {kenkou, nenkin, total:kenkou+nenkin};
+}
+
+function calc(){
+  const hAge = parseInt(document.getElementById('h_age').value)||65;
+  const wNone = document.getElementById('w_none').checked;
+  const wAge = parseInt(document.getElementById('w_age').value)||65;
+  const hPensionMan = parseFloat(document.getElementById('h_pension').value)||0;
+  const wPensionMan = wNone?0:(parseFloat(document.getElementById('w_pension').value)||0);
+  const hSalaryMan = parseFloat(document.getElementById('h_salary').value)||0;
+  const wSalaryMan = wNone?0:(parseFloat(document.getElementById('w_salary').value)||0);
+  const hShaho = document.getElementById('h_shaho').checked;
+  const wShaho = (!wNone) && document.getElementById('w_shaho').checked;
+
+  const hIncome = toYen(hPensionMan);
+  const wIncome = toYen(wPensionMan);
+  const hSalary = toYen(hSalaryMan);
+  const wSalary = toYen(wSalaryMan);
+
+  const hZatsu = zatsuShotoku(hIncome, hAge);
+  const wZatsu = zatsuShotoku(wIncome, wAge);
+
+  const hKyuyoRaw = kyuyoShotoku(hSalary);
+  const wKyuyoRaw = kyuyoShotoku(wSalary);
+  const hKyuyo = Math.max(0, hKyuyoRaw - shotokuChousei(hKyuyoRaw, hZatsu));
+  const wKyuyo = Math.max(0, wKyuyoRaw - shotokuChousei(wKyuyoRaw, wZatsu));
+
+  const hGoukei = hZatsu + hKyuyo;
+  const wGoukei = wZatsu + wKyuyo;
+
+  const wIsDependent = (!wNone) && wGoukei<=480000; // 住民税非課税限度額の「扶養人数」カウント用（控除対象配偶者、48万円以下）
+  const wCanSpouseKoujo = (!wNone) && wGoukei<=1330000 && hGoukei<=10000000; // 配偶者控除・配偶者特別控除の対象範囲（合計所得133万円以下、夫の所得1,000万円以下）
+  const wIsRoujin = wAge>=70;
+
+  // ---- 国保：軽減判定・被保険者数（75歳未満前提） ----
+  // 社保加入者の被扶養者（年収130万円未満、60歳以上・障害者は180万円未満）は、
+  // 本人が社保未加入でも配偶者の健康保険の扶養に入れるため国保の対象外となる
+  const isFuyouShikaku = (age, incomeYen, salaryYen)=>
+    (age>=60 ? (incomeYen+salaryYen)<1800000 : (incomeYen+salaryYen)<1300000);
+  const hIsFuyouOfW = wShaho && !hShaho && isFuyouShikaku(hAge, hIncome, hSalary);
+  const wIsFuyouOfH = hShaho && !wShaho && (!wNone) && isFuyouShikaku(wAge, wIncome, wSalary);
+
+  const hInNK = hAge<75 && !hShaho && !hIsFuyouOfW, wInNK = (!wNone) && wAge<75 && !wShaho && !wIsFuyouOfH;
+  const hoken_hisya = (hInNK?1:0)+(wInNK?1:0);
+
+  const isKyuyoSyotokusya = (age, pensionIncomeYen, salaryIncomeYen)=>
+    salaryIncomeYen>550000 || (age>=65 ? pensionIncomeYen>1250000 : pensionIncomeYen>600000);
+  let kyuyoCount=0;
+  if(hInNK && isKyuyoSyotokusya(hAge,hIncome,hSalary)) kyuyoCount++;
+  if(wInNK && !wNone && isKyuyoSyotokusya(wAge,wIncome,wSalary)) kyuyoCount++;
+
+  // 軽減判定所得：公的年金等は65歳以上のみ最大15万円特別控除、給与所得はそのまま算入
+  const keigenBase15 = (age, zatsu, kyuyo)=> kyuyo + (age>=65 ? Math.max(0, zatsu-150000) : zatsu);
+  let hantei = 0;
+  if(hInNK) hantei += keigenBase15(hAge,hZatsu,hKyuyo);
+  if(wInNK) hantei += keigenBase15(wAge,wZatsu,wKyuyo);
+
+  const base7 = 430000 + 100000*Math.max(0,kyuyoCount-1);
+  const base5 = 430000 + 310000*hoken_hisya + 100000*Math.max(0,kyuyoCount-1);
+  const base2 = 430000 + 570000*hoken_hisya + 100000*Math.max(0,kyuyoCount-1);
+
+  let keigenRate = 0, keigenLabel='軽減なし';
+  if(hoken_hisya>0){
+    if(hantei<=base7){keigenRate=0.7;keigenLabel='7割軽減';}
+    else if(hantei<=base5){keigenRate=0.5;keigenLabel='5割軽減';}
+    else if(hantei<=base2){keigenRate=0.2;keigenLabel='2割軽減';}
+  }
+
+  const shotokuwariBase = (goukei)=> Math.max(0, goukei-430000);
+  let shotokuwariGoukei=0;
+  if(hInNK) shotokuwariGoukei += shotokuwariBase(hGoukei);
+  if(wInNK) shotokuwariGoukei += shotokuwariBase(wGoukei);
+
+  // 介護納付金分：40〜64歳（介護第2号被保険者）のみ対象。65歳以上は別途「介護保険料」として個別賦課
+  const isKaigo2Gou = (age)=> age>=40 && age<65;
+  let kaigo2Nin=0, kaigo2ShotokuwariGoukei=0;
+  if(hInNK && isKaigo2Gou(hAge)){ kaigo2Nin++; kaigo2ShotokuwariGoukei+=shotokuwariBase(hGoukei); }
+  if(wInNK && isKaigo2Gou(wAge)){ kaigo2Nin++; kaigo2ShotokuwariGoukei+=shotokuwariBase(wGoukei); }
+
+  function kokuhoBubun(rate, kintouUnit, heitou, genndo){
+    const kintouNin = hoken_hisya;
+    const shotokuwari = shotokuwariGoukei*rate;
+    const kintouwari = kintouUnit*kintouNin*(1-keigenRate);
+    const heitouwari = heitou*(1-keigenRate);
+    let total = shotokuwari+kintouwari+heitouwari;
+    total = Math.min(total, genndo);
+    return round100(total);
+  }
+  const iryo = hoken_hisya>0 ? kokuhoBubun(0.0764, 27600, 20000, 660000) : 0;
+  const shien = hoken_hisya>0 ? kokuhoBubun(0.0327, 11500, 8400, 260000) : 0;
+  const kosodate = hoken_hisya>0 ? round100(Math.min(shotokuwariGoukei*0.0031 + 1900*hoken_hisya*(1-keigenRate), 30000)) : 0;
+  const kaigoNoufu = kaigo2Nin>0 ? round100(Math.min(
+    kaigo2ShotokuwariGoukei*0.0303 + 16900*kaigo2Nin*(1-keigenRate), 170000
+  )) : 0;
+  const kokuhoTotal = iryo+shien+kosodate+kaigoNoufu;
+
+  // ---- 住民税：非課税判定（広陵町公式基準・合計所得金額ベース） ----
+  function juuminHantei(age, goukei, hasHaiguusha){
+    const fuyou = hasHaiguusha?1:0;
+    const kintouLimit = fuyou>0 ? (280000*(fuyou+1)+268000) : 380000;
+    const shotokuLimit = fuyou>0 ? (350000*(fuyou+1)+420000) : 450000;
+    const kintouHikazei = goukei<=kintouLimit;
+    const shotokuHikazei = goukei<=shotokuLimit;
+    return {kintouHikazei, shotokuHikazei};
+  }
+
+  function juuminzei(goukei, hantei, haigushaKoujo, shakaihokenKoujo){
+    const kintouwari = hantei.kintouHikazei ? 0 : 5500;
+    let shotokuwari = 0;
+    if(!hantei.shotokuHikazei){
+      const kazei = Math.max(0, goukei - 430000 - haigushaKoujo - shakaihokenKoujo);
+      let jinteki = 50000;
+      if(haigushaKoujo>0) jinteki += (wIsRoujin?100000:50000);
+      let chousei;
+      if(kazei<=2000000){ chousei = Math.round(jinteki*0.05); }
+      else { chousei = Math.max(2500, Math.round((jinteki-(kazei-2000000))*0.05)); }
+      shotokuwari = Math.max(0, Math.floor((kazei*0.10 - chousei)/100)*100);
+    }
+    return {kintouwari, shotokuwari, total:kintouwari+shotokuwari};
+  }
+
+  const shakaihokenTotalForH = kokuhoTotal;
+
+  const hHaiguusha = wCanSpouseKoujo ? haigushaKoujoTable(wGoukei, wIsRoujin, true) : 0;
+  const hHantei = juuminHantei(hAge, hGoukei, wIsDependent);
+  let hKaigoTemp = 72000;
+  const hJuumin = juuminzei(hGoukei, hHantei, hHaiguusha, shakaihokenTotalForH+hKaigoTemp);
+
+  const wHantei = (!wNone) ? juuminHantei(wAge, wGoukei, false) : {kintouHikazei:true, shotokuHikazei:true};
+  const wJuumin = (!wNone) ? juuminzei(wGoukei, wHantei, 0, 0) : {kintouwari:0,shotokuwari:0,total:0};
+
+  const hJuuminCourse = hJuumin.total>0 ? '課税' : '非課税';
+  const wJuuminCourse = wNone ? '-' : (wJuumin.total>0 ? '課税' : '非課税');
+
+  // ---- 介護保険料（65歳以上のみ第1号被保険者。段階判定は合計所得金額ベース） ----
+  function kaigoDankai(age, goukei, incomeYen, isKazeisha, setaiHasKazeisha){
+    if(age>=40 && age<65) return {label:'対象外（国保の介護納付金分に含む）', amount:0};
+    if(age<40) return {label:'対象外（介護保険の対象年齢外）', amount:0};
+    const kazeiNenkinGoukei = incomeYen + Math.max(0, goukei - zatsuShotoku(incomeYen,age)); // 課税年金収入＋年金以外の合計所得
+    if(isKazeisha){
+      if(goukei<1200000) return {label:'第6段階', amount:86400};
+      if(goukei<2100000) return {label:'第7段階', amount:93600};
+      if(goukei<3200000) return {label:'第8段階', amount:108000};
+      if(goukei<4200000) return {label:'第9段階', amount:122400};
+      if(goukei<5200000) return {label:'第10段階', amount:136800};
+      if(goukei<6200000) return {label:'第11段階', amount:151200};
+      if(goukei<7200000) return {label:'第12段階', amount:165600};
+      return {label:'第13段階', amount:172800};
+    } else if(setaiHasKazeisha){
+      if(kazeiNenkinGoukei<=826500) return {label:'第4段階', amount:64800};
+      return {label:'第5段階', amount:72000};
+    } else {
+      if(kazeiNenkinGoukei<=826500) return {label:'第1段階', amount:20520};
+      if(kazeiNenkinGoukei<=1200000) return {label:'第2段階', amount:34920};
+      return {label:'第3段階', amount:49320};
+    }
+  }
+
+  const setaiZeninHikazei = (hJuumin.kintouwari===0) && (wNone || wJuumin.kintouwari===0);
+  const hKaigo = kaigoDankai(hAge, hGoukei, hIncome, hJuumin.kintouwari>0, hJuumin.kintouwari===0 && !setaiZeninHikazei ? true : (wJuumin.kintouwari>0));
+  const wKaigo = wNone ? {label:'-',amount:0} : kaigoDankai(wAge, wGoukei, wIncome, wJuumin.kintouwari>0, wJuumin.kintouwari===0 && hJuumin.kintouwari>0);
+
+  // 給与から天引きされる社会保険料（健康保険・厚生年金、本人負担分）
+  const hShahoRyou = hShaho ? shahoHonninFutan(hAge, hSalary) : {kenkou:0, nenkin:0, total:0};
+  const wShahoRyou = wShaho ? shahoHonninFutan(wAge, wSalary) : {kenkou:0, nenkin:0, total:0};
+
+  // 再計算：介護保険料・社会保険料が確定したので社会保険料控除を正しい値に更新して住民税を再計算
+  const shakaihokenActual = kokuhoTotal + hKaigo.amount + wKaigo.amount + hShahoRyou.total + wShahoRyou.total;
+  const hJuumin2 = juuminzei(hGoukei, hHantei, hHaiguusha, shakaihokenActual);
+
+  // ---- 所得税 ----
+  const hHaiguushaKoujoZei = wCanSpouseKoujo ? haigushaKoujoTable(wGoukei, wIsRoujin, false) : 0;
+  const hKazeiZei = Math.max(0, hGoukei - 480000 - hHaiguushaKoujoZei - shakaihokenActual);
+  const hZeigaku = Math.round(shotokuzeiRate(hKazeiZei)*1.021/100)*100;
+
+  const wKazeiZei = wNone?0:Math.max(0, wGoukei - 480000);
+  const wZeigaku = wNone?0:Math.round(shotokuzeiRate(wKazeiZei)*1.021/100)*100;
+
+  // ---- 集計 ----
+  const totalIncome = hIncome+wIncome+hSalary+wSalary;
+  const totalTax = hZeigaku+wZeigaku;
+  const totalJuumin = hJuumin2.total + (wNone?0:wJuumin.total);
+  const totalKaigo = hKaigo.amount + wKaigo.amount;
+  const totalShaho = hShahoRyou.total + wShahoRyou.total;
+  const totalDeduct = totalTax+totalJuumin+totalKaigo+kokuhoTotal+totalShaho;
+  const totalNet = totalIncome-totalDeduct;
+
+  const fmt = n=>'¥'+Math.round(n).toLocaleString();
+  const fmtMan = n=>Math.round(n/10000).toLocaleString()+'万円';
+
+  // ---- 個人別の手取り（国保税は人数で均等折半。制度上の正式な按分ルールはなく、便宜上の按分） ----
+  const hKokuhoBubun = hInNK ? round100(kokuhoTotal/hoken_hisya) : 0;
+  const wKokuhoBubun = wInNK ? round100(kokuhoTotal/hoken_hisya) : 0;
+  const hNet = hIncome+hSalary - hZeigaku - hJuumin2.total - hKaigo.amount - hShahoRyou.total - hKokuhoBubun;
+  const wNet = wNone ? 0 : (wIncome+wSalary - wZeigaku - wJuumin.total - wKaigo.amount - wShahoRyou.total - wKokuhoBubun);
+
+  // ---- 詳細タブ用データ ----
+  const D = {
+    hAge, wAge, wNone, hShaho, wShaho,
+    hIncome, wIncome, hSalary, wSalary,
+    hZatsu, wZatsu, hKyuyoRaw, wKyuyoRaw, hKyuyo, wKyuyo,
+    hChousei: shotokuChousei(hKyuyoRaw, hZatsu), wChousei: shotokuChousei(wKyuyoRaw, wZatsu),
+    hGoukei, wGoukei, wIsDependent, wCanSpouseKoujo, wIsRoujin,
+    hIsFuyouOfW, wIsFuyouOfH, isFuyouShikaku,
+    hInNK, wInNK, hoken_hisya, keigenRate, keigenLabel, hantei, base7, base5, base2,
+    iryo, shien, kosodate, kaigoNoufu, kokuhoTotal, hKokuhoBubun, wKokuhoBubun,
+    hHantei, wHantei, hHaiguusha, hHaiguushaKoujoZei, hJuumin2, wJuumin,
+    hKaigo, wKaigo, hShahoRyou, wShahoRyou,
+    shakaihokenActual, hKazeiZei, hZeigaku, wKazeiZei, wZeigaku,
+    totalIncome, totalTax, totalJuumin, totalKaigo, totalShaho, totalDeduct, totalNet,
+    hNet, wNet, fmt
+  };
+  renderDetail(D);
+
+  document.getElementById('out_nettotal').textContent = fmt(totalNet);
+  document.getElementById('out_monthly').textContent = '月額換算：'+fmt(totalNet/12);
+  document.getElementById('mini_income').textContent = fmt(totalIncome);
+  document.getElementById('mini_deduct').textContent = fmt(totalDeduct);
+
+  let psum = '夫：'+hAge+'歳・年金'+hPensionMan+'万円'+(hSalary>0?'・給与'+hSalaryMan+'万円':'')+(hShaho?'（社保加入）':'');
+  if(!wNone){
+    psum += '　／　妻：'+wAge+'歳・年金'+wPensionMan+'万円'+(wSalary>0?'・給与'+wSalaryMan+'万円':'')+(wShaho?'（社保加入）':'');
+  } else {
+    psum += '　／　単身世帯';
+  }
+  psum += '　（広陵町・令和8年度基準で試算　'+(new Date()).toLocaleDateString('ja-JP')+'）';
+  document.getElementById('print_summary').textContent = psum;
+
+  document.getElementById('c_h_income').textContent = fmt(hIncome);
+  document.getElementById('c_w_income').textContent = wNone?'-':fmt(wIncome);
+  document.getElementById('c_total_income').textContent = fmt(hIncome+wIncome);
+
+  const hasSalary = hSalary>0 || wSalary>0;
+  document.getElementById('row_salary_income').style.display = hasSalary ? '' : 'none';
+  document.getElementById('row_salary_income2').style.display = hasSalary ? '' : 'none';
+  document.getElementById('c_h_salary').textContent = fmt(hSalary);
+  document.getElementById('c_w_salary').textContent = wNone?'-':fmt(wSalary);
+  document.getElementById('c_total_salary').textContent = fmt(hSalary+wSalary);
+  document.getElementById('c_total_income_all').textContent = fmt(totalIncome);
+  document.getElementById('m_income').textContent = fmt(totalIncome/12);
+
+  document.getElementById('c_h_zatsu').textContent = fmt(hZatsu);
+  document.getElementById('c_w_zatsu').textContent = wNone?'-':fmt(wZatsu);
+
+  document.getElementById('row_salary').style.display = hasSalary ? '' : 'none';
+  document.getElementById('c_h_kyuyo').textContent = fmt(hKyuyo);
+  document.getElementById('c_w_kyuyo').textContent = wNone?'-':fmt(wKyuyo);
+  document.getElementById('c_h_goukei').textContent = fmt(hGoukei);
+  document.getElementById('c_w_goukei').textContent = wNone?'-':fmt(wGoukei);
+
+  const hasShaho = hShaho || wShaho;
+  document.getElementById('row_shaho').style.display = hasShaho ? '' : 'none';
+  document.getElementById('row_shaho2').style.display = hasShaho ? '' : 'none';
+  document.getElementById('c_h_kenkou').textContent = hShaho ? fmt(hShahoRyou.kenkou) : '-';
+  document.getElementById('c_w_kenkou').textContent = wShaho ? fmt(wShahoRyou.kenkou) : '-';
+  document.getElementById('c_total_kenkou').textContent = fmt(hShahoRyou.kenkou+wShahoRyou.kenkou);
+  document.getElementById('m_kenkou').textContent = fmt((hShahoRyou.kenkou+wShahoRyou.kenkou)/12);
+  document.getElementById('c_h_nenkin').textContent = hShaho ? fmt(hShahoRyou.nenkin) : '-';
+  document.getElementById('c_w_nenkin').textContent = wShaho ? fmt(wShahoRyou.nenkin) : '-';
+  document.getElementById('c_total_nenkin').textContent = fmt(hShahoRyou.nenkin+wShahoRyou.nenkin);
+  document.getElementById('m_nenkin').textContent = fmt((hShahoRyou.nenkin+wShahoRyou.nenkin)/12);
+
+  document.getElementById('c_h_tax').textContent = fmt(hZeigaku);
+  document.getElementById('c_w_tax').textContent = wNone?'-':fmt(wZeigaku);
+  document.getElementById('c_total_tax').textContent = fmt(totalTax);
+  document.getElementById('m_tax').textContent = fmt(totalTax/12);
+
+  document.getElementById('c_h_juumin').textContent = fmt(hJuumin2.total);
+  document.getElementById('c_w_juumin').textContent = wNone?'-':fmt(wJuumin.total);
+  document.getElementById('c_total_juumin').textContent = fmt(totalJuumin);
+  document.getElementById('m_juumin').textContent = fmt(totalJuumin/12);
+  document.getElementById('tag_juumin').innerHTML = totalJuumin===0 ? '<span class="tag exempt">世帯非課税</span>' : '';
+
+  document.getElementById('c_h_kaigo').textContent = fmt(hKaigo.amount)+'（'+hKaigo.label+'）';
+  document.getElementById('c_w_kaigo').textContent = wNone?'-':(fmt(wKaigo.amount)+'（'+wKaigo.label+'）');
+  document.getElementById('c_total_kaigo').textContent = fmt(totalKaigo);
+  document.getElementById('m_kaigo').textContent = fmt(totalKaigo/12);
+
+  document.getElementById('c_total_kokuho').textContent = fmt(kokuhoTotal);
+  document.getElementById('m_kokuho').textContent = fmt(kokuhoTotal/12);
+  document.getElementById('tag_kokuho').innerHTML = keigenRate>0 ? '<span class="tag exempt">'+keigenLabel+'</span>' : (hoken_hisya>0?'<span class="tag taxed">軽減なし</span>':'');
+
+  document.getElementById('c_total_deduct').textContent = fmt(totalDeduct);
+  document.getElementById('m_deduct').textContent = fmt(totalDeduct/12);
+  document.getElementById('c_total_net').textContent = fmt(totalNet);
+  document.getElementById('m_net').textContent = fmt(totalNet/12);
+
+  const notes = [];
+  notes.push('夫の住民税：'+(hJuumin2.total>0?'課税（均等割'+(hHantei.kintouHikazei?'非課税':'課税')+'）':'非課税'));
+  if(!wNone) notes.push('妻の住民税：'+(wJuumin.total>0?'課税':'非課税'));
+  notes.push('国保税の軽減：'+keigenLabel+'（世帯の軽減判定所得　'+Math.round(hantei/10000)+'万円）');
+  notes.push('介護保険料　夫：'+hKaigo.label+'　'+(wNone?'':'妻：'+wKaigo.label));
+  if(kaigoNoufu>0) notes.push('介護納付金分（40〜64歳）を国保税に含めて計算：'+fmt(kaigoNoufu));
+  if(wCanSpouseKoujo) notes.push('妻は'+(wIsDependent?'配偶者控除':'配偶者特別控除')+'の対象（配偶者の合計所得 '+Math.round(wGoukei/10000)+'万円）');
+  if(hasSalary) notes.push('給与所得は所得金額調整控除（年金と給与を両方持つ人向け）を適用済み');
+  if(hShaho) notes.push('夫は給与先の社会保険に加入のため国保の対象外（介護保険第1号は65歳以上なら別途市町村から賦課）。健康保険料・厚生年金保険料の本人負担額は概算で計算し、手取りと社会保険料控除の両方に反映済みです');
+  if(wShaho) notes.push('妻は給与先の社会保険に加入のため国保の対象外（介護保険第1号は65歳以上なら別途市町村から賦課）。健康保険料・厚生年金保険料の本人負担額は概算で計算し、手取りと社会保険料控除の両方に反映済みです');
+  if(wIsFuyouOfH) notes.push('妻は夫の健康保険の被扶養者に認定され、妻自身は国保・保険料負担なし（妻の年収 '+Math.round((wIncome+wSalary)/10000)+'万円が扶養認定基準未満のため。介護保険第1号のみ65歳以上なら別途）');
+  if(hIsFuyouOfW) notes.push('夫は妻の健康保険の被扶養者に認定され、夫自身は国保・保険料負担なし（夫の年収 '+Math.round((hIncome+hSalary)/10000)+'万円が扶養認定基準未満のため。介護保険第1号のみ65歳以上なら別途）');
+  document.getElementById('notes').innerHTML = notes.map(n=>'<li>'+n+'</li>').join('');
+}
+
+function switchTab(name){
+  document.getElementById('tab-simple').style.display = name==='simple' ? '' : 'none';
+  document.getElementById('tab-detail').style.display = name==='detail' ? '' : 'none';
+  document.getElementById('tabbtn-simple').classList.toggle('active', name==='simple');
+  document.getElementById('tabbtn-detail').classList.toggle('active', name==='detail');
+}
+
+function renderDetail(D){
+  const fmt = D.fmt;
+  const man = n => Math.round(n/10000).toLocaleString()+'万円';
+  const row = (label,val,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><td>'+label+'</td><td>'+val+'</td></tr>';
+  const approx = '<span class="dapprox">概算</span>';
+  const exact = '<span class="dexact">確定</span>';
+
+  // ---------- 整合性チェック ----------
+  const warn = [];
+  if(D.hShaho && D.hInNK) warn.push('夫は社保加入なのに国保加入判定になっています（内部エラー）');
+  if(D.wShaho && D.wInNK) warn.push('妻は社保加入なのに国保加入判定になっています（内部エラー）');
+  let consistHtml = '';
+  if(warn.length){
+    consistHtml = warn.map(w=>'<div class="dconsist-warn">⚠ '+w+'</div>').join('');
+  } else {
+    const lines = [];
+    lines.push('夫：'+(D.hShaho?'給与先の社会保険に加入 → 国保は対象外':(D.hIsFuyouOfW?'妻の健康保険の被扶養者 → 国保は対象外':'国民健康保険に加入'))+'。');
+    if(!D.wNone) lines.push('妻：'+(D.wShaho?'給与先の社会保険に加入 → 国保は対象外':(D.wIsFuyouOfH?'夫の健康保険の被扶養者 → 国保は対象外':'国民健康保険に加入'))+'。');
+    else lines.push('妻：入力なし（単身世帯として計算）。');
+    lines.push('入力条件と計算モデルの間に矛盾は検出されませんでした。');
+    consistHtml = '<div class="dconsist-ok">'+lines.join('<br>')+'</div>';
+  }
+  document.getElementById('d_consistency').innerHTML = consistHtml;
+
+  // ---------- 個人ブロック生成 ----------
+  function personHTML(side, label, avatarCls){
+    const age = side==='h'?D.hAge:D.wAge;
+    const none = side==='w' && D.wNone;
+    if(none){
+      return '<div class="dperson-head"><span class="avatar '+avatarCls+'">'+label+'</span><h2>'+label+'</h2></div>'
+        +'<div class="dblock"><h3>入力なし（単身世帯として計算）</h3></div>';
+    }
+    const income = side==='h'?D.hIncome:D.wIncome;
+    const salary = side==='h'?D.hSalary:D.wSalary;
+    const zatsu = side==='h'?D.hZatsu:D.wZatsu;
+    const kyuyoRaw = side==='h'?D.hKyuyoRaw:D.wKyuyoRaw;
+    const kyuyo = side==='h'?D.hKyuyo:D.wKyuyo;
+    const chousei = side==='h'?D.hChousei:D.wChousei;
+    const goukei = side==='h'?D.hGoukei:D.wGoukei;
+    const shaho = side==='h'?D.hShaho:D.wShaho;
+    const shahoRyou = side==='h'?D.hShahoRyou:D.wShahoRyou;
+    const inNK = side==='h'?D.hInNK:D.wInNK;
+    const isFuyou = side==='h'?D.hIsFuyouOfW:D.wIsFuyouOfH;
+    const kaigo = side==='h'?D.hKaigo:D.wKaigo;
+    const juumin = side==='h'?D.hJuumin2:D.wJuumin;
+    const hantei_ = side==='h'?D.hHantei:D.wHantei;
+    const zeigaku = side==='h'?D.hZeigaku:D.wZeigaku;
+    const kazei = side==='h'?D.hKazeiZei:D.wKazeiZei;
+    const net = side==='h'?D.hNet:D.wNet;
+    const kokuhoBubun = side==='h'?D.hKokuhoBubun:D.wKokuhoBubun;
+    const pensionKoujoLabel = age>=65
+      ? (income<=3300000 ? '65歳以上・年金330万円以下 → 控除110万円（最低保障額）' : '65歳以上・速算表を適用')
+      : (income<=1300000 ? '65歳未満・年金130万円以下 → 収入-60万円' : '65歳未満・速算表を適用');
+
+    let html = '<div class="dperson-head"><span class="avatar '+avatarCls+'">'+label+'</span><h2>'+label+'（'+age+'歳）</h2></div>';
+
+    // 年金
+    html += '<div class="dblock"><h3>年金 <span class="result">'+fmt(zatsu)+'</span></h3><table class="dtrace">'
+      + row('年金収入（額面）', fmt(income))
+      + row('公的年金等控除の考え方', pensionKoujoLabel, 'sub')
+      + row('雑所得（年金控除後）', fmt(zatsu), 'op')
+      + '</table></div>';
+
+    // 給与
+    if(salary>0){
+      html += '<div class="dblock"><h3>給与 <span class="result">'+fmt(kyuyo)+'</span></h3><table class="dtrace">'
+        + row('給与収入（額面）', fmt(salary))
+        + row('給与所得控除後（調整控除前）', fmt(kyuyoRaw), 'sub')
+        + row('給与所得（調整控除後）', fmt(kyuyo), 'op')
+        + '</table></div>';
+
+      // 所得金額調整控除
+      const taigai = kyuyoRaw>0 && zatsu>0;
+      html += '<div class="dblock"><h3>所得金額調整控除 <span class="result">'+(taigai?fmt(chousei):'対象外')+'</span></h3><table class="dtrace">'
+        + row('対象か', taigai?'対象（年金雑所得と給与所得の両方がある）':'対象外（片方のみのため）')
+        + (taigai ? (
+            row('控除前の給与所得', fmt(kyuyoRaw), 'sub')
+            + row('公的年金等雑所得', fmt(zatsu), 'sub')
+            + row('計算式', 'min(給与所得,10万)＋min(年金雑所得,10万)－10万', 'sub')
+            + row('所得金額調整控除額', fmt(chousei), 'op')
+            + row('控除後の給与所得', fmt(kyuyo), 'op')
+          ) : '')
+        + '</table></div>';
+    }
+
+    // 合計所得金額
+    html += '<div class="dblock"><h3>合計所得金額 <span class="result">'+fmt(goukei)+'</span></h3><table class="dtrace">'
+      + row('雑所得（年金）', fmt(zatsu), 'sub')
+      + (salary>0 ? row('給与所得（調整控除後）', fmt(kyuyo), 'sub') : '')
+      + row('その他所得', '¥0', 'sub')
+      + row('合計所得金額', fmt(goukei), 'op')
+      + '</table></div>';
+
+    // 所得税
+    const haiguushaKoujoZei = side==='h' ? D.hHaiguushaKoujoZei : 0;
+    html += '<div class="dblock"><h3>所得税 <span class="result">'+fmt(zeigaku)+'</span></h3><table class="dtrace">'
+      + row('合計所得金額', fmt(goukei))
+      + row('基礎控除', '－'+fmt(480000), 'sub')
+      + (side==='h' ? row('配偶者控除', haiguushaKoujoZei>0 ? '－'+fmt(haiguushaKoujoZei) : '対象外', 'sub') : '')
+      + (side==='h' ? row('社会保険料控除（国保・介護保険・社保料の実額合計）', '－'+fmt(D.shakaihokenActual), 'sub') : '')
+      + row('課税所得', fmt(kazei), 'op')
+      + row('税率区分の適用', kazei<=1950000?'195万円以下：5%':(kazei<=3300000?'195〜330万円：10%（控除97,500円）':(kazei<=6950000?'330〜695万円：20%（控除427,500円）':'695万円超：上位区分')), 'sub')
+      + row('復興特別所得税', '基準額×2.1%を加算', 'sub')
+      + row('所得税額（最終）', fmt(zeigaku), 'final')
+      + '</table></div>';
+
+    // 住民税
+    const kintouLim = hantei_ ? (D.wIsDependent && side==='h' ? (280000*2+268000) : 380000) : 380000;
+    const shotokuLim = hantei_ ? (D.wIsDependent && side==='h' ? (350000*2+420000) : 450000) : 450000;
+    html += '<div class="dblock"><h3>住民税 <span class="result">'+fmt(juumin.total)+'</span></h3><table class="dtrace">'
+      + row('合計所得金額', fmt(goukei))
+      + row('均等割の非課税限度額', fmt(kintouLim)+'　→　'+(hantei_.kintouHikazei?'非課税':'課税（限度額超）'), 'sub')
+      + row('所得割の非課税限度額', fmt(shotokuLim)+'　→　'+(hantei_.shotokuHikazei?'非課税':'課税（限度額超）'), 'sub')
+      + row('均等割（5,500円のうち市町村3,000円・県1,500円・森林環境税1,000円）', fmt(juumin.kintouwari))
+      + row('所得割（合計所得－基礎控除43万－配偶者控除－社保控除）×10%－調整控除', fmt(juumin.shotokuwari))
+      + row('最終住民税', fmt(juumin.total), 'final')
+      + '</table></div>';
+
+    // 社会保険料（社保加入時のみ）
+    if(shaho){
+      const kenkouRate = (0.0991+0.0023+(age>=40&&age<65?0.0162:0))/2;
+      html += '<div class="dblock"><h3>給与の社会保険料（会社負担分は含まず本人負担のみ） '+approx+'<span class="result">'+fmt(shahoRyou.total)+'</span></h3><table class="dtrace">'
+        + row('給与収入（標準報酬月額は年収を12等分した概算）', fmt(salary), 'sub')
+        + row('健康保険料率（本人負担・奈良支部令和8年度）', (kenkouRate*100).toFixed(3)+'%', 'sub')
+        + row('健康保険料（本人負担）', fmt(shahoRyou.kenkou))
+        + row('厚生年金保険料率（本人負担・全国一律）', '9.150%', 'sub')
+        + row('厚生年金保険料（本人負担）', fmt(shahoRyou.nenkin))
+        + row('本人負担合計（年額）', fmt(shahoRyou.total), 'final')
+        + row('本人負担合計（月額）', fmt(shahoRyou.total/12))
+        + '</table><div class="dreason">標準報酬月額の等級表（健康保険50等級・厚生年金32等級）は使わず、年収を単純に按分した概算です。実際の給与明細とは数百円〜数千円/月ずれる場合があります。</div></div>';
+    }
+
+    // 介護保険
+    html += '<div class="dblock"><h3>介護保険料 <span class="result">'+fmt(kaigo.amount)+'</span></h3><table class="dtrace">'
+      + row('年齢区分', age>=65?'65歳以上：第1号被保険者（市町村が個別賦課）':(age>=40?'40〜64歳：第2号被保険者（国保の介護納付金分に含む）':'40歳未満：対象外'))
+      + (age>=65 ? (
+          row('合計所得金額（介護保険の段階判定に使用）', fmt(goukei), 'sub')
+          + row('住民税', juumin.total>0?'課税':'非課税', 'sub')
+          + row('段階判定根拠', kaigo.label, 'sub')
+          + row('年額保険料', fmt(kaigo.amount), 'final')
+          + row('月額換算', fmt(kaigo.amount/12))
+        ) : '')
+      + '</table></div>';
+
+    // 国民健康保険
+    html += '<div class="dblock"><h3>国民健康保険 <span class="result">'+(inNK?fmt(kokuhoBubun):'¥0')+'</span></h3><table class="dtrace">'
+      + row('加入判定', inNK?'加入':'非加入')
+      + row('理由', shaho?'給与先の社会保険に加入しているため対象外':(isFuyou?'配偶者の健康保険の被扶養者のため対象外':(inNK?'他の医療保険に加入していないため国保に加入':'-')))
+      + (inNK ? (
+          row('世帯の国保税（医療分＋支援金分＋子育て分＋介護納付金分）', fmt(D.kokuhoTotal), 'sub')
+          + row('世帯の軽減判定', D.keigenLabel+'（判定所得 '+man(D.hantei)+'）', 'sub')
+          + row('按分方法', '加入者数（'+D.hoken_hisya+'人）で均等折半', 'sub')
+          + row('本人負担分（按分後）', fmt(kokuhoBubun), 'final')
+        ) : '')
+      + '</table></div>';
+
+    // 配偶者控除・被扶養者判定（夫のみ、対象がいる場合）
+    if(side==='h' && !D.wNone){
+      const kubun = !D.wCanSpouseKoujo ? '対象外（合計所得133万円超、または夫の所得1,000万円超）' : (D.wIsDependent ? '配偶者控除（合計所得48万円以下）' : '配偶者特別控除（合計所得48万円超133万円以下・段階的に減少）');
+      html += '<div class="dblock"><h3>配偶者控除・被扶養者の判定</h3><table class="dtrace">'
+        + row('妻の合計所得金額', fmt(D.wGoukei))
+        + row('区分', kubun)
+        + (D.wCanSpouseKoujo ? row('控除額（住民税・老人控除対象'+(D.wIsRoujin?'あり':'なし')+'）', fmt(D.hHaiguusha), 'sub') : '')
+        + row('妻の年収（年金＋給与、税法上の所得とは別基準）', fmt(D.wIncome+D.wSalary))
+        + row('健康保険の被扶養者認定基準（社会保険上の扶養、税法上の配偶者控除とは別制度）', (D.wAge>=60?'60歳以上：年収180万円未満':'60歳未満：年収130万円未満'))
+        + row('被扶養者に入れるか', D.wIsFuyouOfH?'入れる（夫の社保に加入のため判定）':(D.hShaho?'入れない（基準超過）':'夫が社保未加入のため判定対象外'))
+        + '</table></div>';
+    }
+
+    // 個人手取り
+    html += '<div class="dblock"><h3>'+label+'の年間手取り <span class="result">'+fmt(net)+'</span></h3><table class="dtrace">'
+      + row('年金収入＋給与収入', fmt(income+salary))
+      + row('所得税', '－'+fmt(zeigaku), 'sub')
+      + row('住民税', '－'+fmt(juumin.total), 'sub')
+      + (shaho ? row('健康保険料・厚生年金保険料（社保）', '－'+fmt(shahoRyou.total), 'sub') : '')
+      + (kaigo.amount>0 ? row('介護保険料', '－'+fmt(kaigo.amount), 'sub') : '')
+      + (inNK ? row('国民健康保険税（按分後）', '－'+fmt(kokuhoBubun), 'sub') : '')
+      + row(label+'の年間手取り', fmt(net), 'final')
+      + row('月額換算', fmt(net/12))
+      + '</table></div>';
+
+    return html;
+  }
+
+  document.getElementById('d_person_h').innerHTML = personHTML('h','夫','h');
+  document.getElementById('d_person_w').innerHTML = personHTML('w','妻','w');
+
+  // ---------- 世帯まとめ ----------
+  const t = document.getElementById('d_summary_table');
+  t.innerHTML = '<tr><th>項目</th><th>夫</th><th>妻</th><th>世帯計</th></tr>'
+    + row2('年金収入（額面）', fmt(D.hIncome), D.wNone?'-':fmt(D.wIncome), fmt(D.hIncome+(D.wNone?0:D.wIncome)))
+    + row2('給与収入（額面）', fmt(D.hSalary), D.wNone?'-':fmt(D.wSalary), fmt(D.hSalary+(D.wNone?0:D.wSalary)))
+    + row2t('額面合計', fmt(D.hIncome+D.hSalary), D.wNone?'-':fmt(D.wIncome+D.wSalary), fmt(D.totalIncome))
+    + row2('所得税', fmt(D.hZeigaku), D.wNone?'-':fmt(D.wZeigaku), fmt(D.totalTax), true)
+    + row2('住民税', fmt(D.hJuumin2.total), D.wNone?'-':fmt(D.wJuumin.total), fmt(D.totalJuumin), true)
+    + row2('社会保険料（社保・本人負担）', fmt(D.hShahoRyou.total), D.wNone?'-':fmt(D.wShahoRyou.total), fmt(D.totalShaho), true)
+    + row2('介護保険料', fmt(D.hKaigo.amount), D.wNone?'-':fmt(D.wKaigo.amount), fmt(D.totalKaigo), true)
+    + row2('国民健康保険税（按分後）', fmt(D.hKokuhoBubun), D.wNone?'-':fmt(D.wKokuhoBubun), fmt(D.kokuhoTotal), true)
+    + row2t('控除合計', '', '', fmt(D.totalDeduct))
+    + row2t('年間手取り', fmt(D.hNet), D.wNone?'-':fmt(D.wNet), fmt(D.totalNet))
+    + row2t('月額換算', fmt(D.hNet/12), D.wNone?'-':fmt(D.wNet/12), fmt(D.totalNet/12));
+
+  function row2(label,h,w,total,deduct){
+    return '<tr'+(deduct?' class="deduct"':'')+'><td>'+label+'</td><td>'+h+'</td><td>'+w+'</td><td>'+total+'</td></tr>';
+  }
+  function row2t(label,h,w,total){
+    return '<tr class="total"><td>'+label+'</td><td>'+h+'</td><td>'+w+'</td><td>'+total+'</td></tr>';
+  }
+}
+
+
+['h_age','h_pension','h_salary','h_shaho','w_age','w_pension','w_salary','w_shaho'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener(el.type==='checkbox' ? 'change' : 'input', calc);
+});
+calc();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "name": "年金手取り計算（広陵町）",
+  "short_name": "年金手取り計算",
+  "description": "広陵町の税制・国保税率・介護保険料に基づいて年金の手取り額を計算します",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf8f3",
+  "theme_color": "#1c2b3a",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
