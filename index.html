@@ -676,12 +676,16 @@ function calc(){
   const wIsRoujin = wAge>=70;
 
   // ---- 国保：軽減判定・被保険者数（75歳未満前提） ----
-  // 社保加入者の被扶養者（年収130万円未満、60歳以上・障害者は180万円未満）は、
-  // 本人が社保未加入でも配偶者の健康保険の扶養に入れるため国保の対象外となる
-  const isFuyouShikaku = (age, incomeYen, salaryYen)=>
-    (age>=60 ? (incomeYen+salaryYen)<1800000 : (incomeYen+salaryYen)<1300000);
-  const hIsFuyouOfW = wShaho && !hShaho && isFuyouShikaku(hAge, hIncome, hSalary);
-  const wIsFuyouOfH = hShaho && !wShaho && (!wNone) && isFuyouShikaku(wAge, wIncome, wSalary);
+  // 社保加入者の被扶養者になるには2つの要件がある：
+  // ①年間収入130万円未満（60歳以上・障害者は180万円未満）
+  // ②同居の場合、収入が扶養者（社保加入している配偶者）の年収の1/2未満（生計維持要件）
+  const isFuyouShikaku = (age, incomeYen, salaryYen, supporterIncomeYen)=>{
+    const inSyunyu = incomeYen+salaryYen;
+    const limit = age>=60 ? 1800000 : 1300000;
+    return inSyunyu<limit && inSyunyu<supporterIncomeYen/2;
+  };
+  const hIsFuyouOfW = wShaho && !hShaho && isFuyouShikaku(hAge, hIncome, hSalary, wIncome+wSalary);
+  const wIsFuyouOfH = hShaho && !wShaho && (!wNone) && isFuyouShikaku(wAge, wIncome, wSalary, hIncome+hSalary);
 
   const hInNK = hAge<75 && !hShaho && !hIsFuyouOfW, wInNK = (!wNone) && wAge<75 && !wShaho && !wIsFuyouOfH;
   const hoken_hisya = (hInNK?1:0)+(wInNK?1:0);
@@ -938,8 +942,8 @@ function calc(){
   if(hasSalary) notes.push('給与所得は所得金額調整控除（年金と給与を両方持つ人向け）を適用済み');
   if(hShaho) notes.push('夫は給与先の社会保険に加入のため国保の対象外（介護保険第1号は65歳以上なら別途市町村から賦課）。健康保険料・厚生年金保険料の本人負担額は概算で計算し、手取りと社会保険料控除の両方に反映済みです');
   if(wShaho) notes.push('妻は給与先の社会保険に加入のため国保の対象外（介護保険第1号は65歳以上なら別途市町村から賦課）。健康保険料・厚生年金保険料の本人負担額は概算で計算し、手取りと社会保険料控除の両方に反映済みです');
-  if(wIsFuyouOfH) notes.push('妻は夫の健康保険の被扶養者に認定され、妻自身は国保・保険料負担なし（妻の年収 '+Math.round((wIncome+wSalary)/10000)+'万円が扶養認定基準未満のため。介護保険第1号のみ65歳以上なら別途）');
-  if(hIsFuyouOfW) notes.push('夫は妻の健康保険の被扶養者に認定され、夫自身は国保・保険料負担なし（夫の年収 '+Math.round((hIncome+hSalary)/10000)+'万円が扶養認定基準未満のため。介護保険第1号のみ65歳以上なら別途）');
+  if(wIsFuyouOfH) notes.push('妻は夫の健康保険の被扶養者に認定され、妻自身は国保・保険料負担なし（妻の年収 '+Math.round((wIncome+wSalary)/10000)+'万円が収入基準未満・かつ夫の年収の半分未満のため。介護保険第1号のみ65歳以上なら別途）');
+  if(hIsFuyouOfW) notes.push('夫は妻の健康保険の被扶養者に認定され、夫自身は国保・保険料負担なし（夫の年収 '+Math.round((hIncome+hSalary)/10000)+'万円が収入基準未満・かつ妻の年収の半分未満のため。介護保険第1号のみ65歳以上なら別途）');
   document.getElementById('notes').innerHTML = notes.map(n=>'<li>'+n+'</li>').join('');
 }
 
@@ -1114,8 +1118,9 @@ function renderDetail(D){
         + row('区分', kubun)
         + (D.wCanSpouseKoujo ? row('控除額（住民税・老人控除対象'+(D.wIsRoujin?'あり':'なし')+'）', fmt(D.hHaiguusha), 'sub') : '')
         + row('妻の年収（年金＋給与、税法上の所得とは別基準）', fmt(D.wIncome+D.wSalary))
-        + row('健康保険の被扶養者認定基準（社会保険上の扶養、税法上の配偶者控除とは別制度）', (D.wAge>=60?'60歳以上：年収180万円未満':'60歳未満：年収130万円未満'))
-        + row('被扶養者に入れるか', D.wIsFuyouOfH?'入れる（夫の社保に加入のため判定）':(D.hShaho?'入れない（基準超過）':'夫が社保未加入のため判定対象外'))
+        + row('健康保険の被扶養者認定基準①（社会保険上の扶養、税法上の配偶者控除とは別制度）', (D.wAge>=60?'60歳以上：年収180万円未満':'60歳未満：年収130万円未満'))
+        + row('被扶養者認定基準②（生計維持要件・同居前提）', '妻の年収が夫の年収（'+fmt(D.hIncome+D.hSalary)+'）の半分未満')
+        + row('被扶養者に入れるか', D.wIsFuyouOfH?'入れる（①②とも満たすため）':(D.hShaho?'入れない（①②のいずれかを満たさない）':'夫が社保未加入のため判定対象外'))
         + '</table></div>';
     }
 
