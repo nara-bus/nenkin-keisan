@@ -560,6 +560,30 @@
     </div>
   </div>
 
+  <div class="panel">
+    <h2><span class="dot"></span>もし夫が亡くなったら（遺族年金シミュレーション）</h2>
+    <div class="checkbox-row" style="margin-top:0;padding-top:0;border-top:none;">
+      <input type="checkbox" id="izoku_on" onchange="calc();">
+      <label for="izoku_on" style="margin:0;">妻ひとりになった場合の生活を試算する</label>
+    </div>
+    <div id="izoku_inputs" style="display:none;margin-top:10px;">
+      <div class="person-grid">
+        <div class="field">
+          <label>夫の年金のうち厚生年金部分（報酬比例部分・年額）<span class="unit">万円</span></label>
+          <input type="number" id="izoku_h_kousei" value="0" step="1" min="0" oninput="calc();">
+        </div>
+        <div class="field">
+          <label>妻自身の厚生年金部分（年額・あれば）<span class="unit">万円</span></label>
+          <input type="number" id="izoku_w_kousei" value="0" step="1" min="0" oninput="calc();">
+        </div>
+      </div>
+      <div class="note" style="margin-top:10px;">
+        「ねんきん定期便」の年金見込額の内訳にある「厚生年金保険（報酬比例部分）」の欄の金額を入力してください。「老齢厚生年金の合計額」には経過的加算や加給年金が含まれている場合があり、それをそのまま入力すると遺族厚生年金が実際より多く出ます。報酬比例部分だけを切り分けて入力してください。わからない場合は0のままでも試算できますが、遺族厚生年金は0円として計算されます。
+      </div>
+    </div>
+    <div id="izoku_result" style="display:none;margin-top:12px;"></div>
+  </div>
+
   <div class="foot">
     前提：75歳未満は国保加入、年金収入のみで社会保険料実額（社保加入時を除く）は概算、扶養親族なしという前提です。配偶者控除・扶養判定・国保加入区分は入力に応じて自動判定されます。
   </div>
@@ -611,11 +635,17 @@ function zatsuShotoku(incomeYen, age){
 }
 
 // 令和7年度税制改正（令和7年分以後の所得税・令和8年度住民税から適用）で48万円→58万円に引き上げ
+// 令和7年度税制改正（令和7年分以後の所得税・令和8年度住民税から適用）で48万円→58万円に引き上げ。
+// 所得税は95万円のところでもう一段階刻みがあるが、住民税は58万円超100万円以下が33万円で均一（国税庁No.1195／自治体公式資料で確認）
 function haigushaKoujoTable(spouseIncome, isRoujin, forJuuminzei){
-  const norm = forJuuminzei ? 330000 : 380000;
   const full = forJuuminzei ? (isRoujin?380000:330000) : (isRoujin?480000:380000);
   if(spouseIncome<=580000) return full;
-  if(spouseIncome<=1000000) return norm;
+  if(forJuuminzei){
+    if(spouseIncome<=1000000) return 330000;
+  } else {
+    if(spouseIncome<=950000) return 380000;
+    if(spouseIncome<=1000000) return 360000;
+  }
   if(spouseIncome<=1050000) return 310000;
   if(spouseIncome<=1100000) return 260000;
   if(spouseIncome<=1150000) return 210000;
@@ -987,6 +1017,155 @@ function calc(){
   if(wIsFuyouOfH) notes.push('妻は夫の健康保険の被扶養者に認定され、妻自身は国保・保険料負担なし（妻の年収 '+Math.round((wIncome+wSalary)/10000)+'万円が収入基準未満・かつ夫の年収の半分未満のため。介護保険第1号のみ65歳以上なら別途）');
   if(hIsFuyouOfW) notes.push('夫は妻の健康保険の被扶養者に認定され、夫自身は国保・保険料負担なし（夫の年収 '+Math.round((hIncome+hSalary)/10000)+'万円が収入基準未満・かつ妻の年収の半分未満のため。介護保険第1号のみ65歳以上なら別途）');
   document.getElementById('notes').innerHTML = notes.map(n=>'<li>'+n+'</li>').join('');
+  calcIzoku();
+}
+
+// ---- 遺族年金シミュレーション（妻ひとりになった場合） ----
+// 単身世帯用に、住民税・介護保険・国保のロジックをここだけ複製している
+// （calc()内の同名ロジックはクロージャで閉じているため直接は使えない）
+function juuminHanteiSingle(goukei){
+  return {kintouHikazei: goukei<=380000, shotokuHikazei: goukei<=450000};
+}
+function juuminzeiSingle(goukei, shakaihokenKoujo){
+  const hantei = juuminHanteiSingle(goukei);
+  const kintouwari = hantei.kintouHikazei ? 0 : 5500;
+  let shotokuwari = 0;
+  if(!hantei.shotokuHikazei){
+    const kazei = Math.max(0, goukei - 430000 - shakaihokenKoujo);
+    const jinteki = 50000;
+    const chousei = kazei<=2000000 ? Math.round(jinteki*0.05) : Math.max(2500, Math.round((jinteki-(kazei-2000000))*0.05));
+    shotokuwari = Math.max(0, Math.floor((kazei*0.10-chousei)/100)*100);
+  }
+  return {kintouwari, shotokuwari, total:kintouwari+shotokuwari, hantei};
+}
+function kaigoDankaiSingle(age, zatsu, goukei, incomeYen, isKazeisha){
+  if(age>=40 && age<65) return {label:'対象外（国保の介護納付金分に含む）', amount:0};
+  if(age<40) return {label:'対象外（介護保険の対象年齢外）', amount:0};
+  const kazeiNenkinGoukei = incomeYen + Math.max(0, goukei - zatsu);
+  if(isKazeisha){
+    if(goukei<1200000) return {label:'第6段階', amount:86400};
+    if(goukei<2100000) return {label:'第7段階', amount:93600};
+    if(goukei<3200000) return {label:'第8段階', amount:108000};
+    if(goukei<4200000) return {label:'第9段階', amount:122400};
+    if(goukei<5200000) return {label:'第10段階', amount:136800};
+    if(goukei<6200000) return {label:'第11段階', amount:151200};
+    if(goukei<7200000) return {label:'第12段階', amount:165600};
+    return {label:'第13段階', amount:172800};
+  }
+  if(kazeiNenkinGoukei<=826500) return {label:'第1段階（世帯全員非課税）', amount:20520};
+  if(kazeiNenkinGoukei<=1200000) return {label:'第2段階（世帯全員非課税）', amount:34920};
+  return {label:'第3段階（世帯全員非課税）', amount:49320};
+}
+function kokuhoSingle(age, zatsu, kyuyo, goukei, incomeYen, salaryYen, isShaho, isFuyou){
+  if(isShaho || isFuyou || age>=75) return {total:0, label:isShaho?'社保加入のため対象外':(isFuyou?'被扶養者のため対象外':'75歳以上（後期高齢者医療）'), keigenRate:0};
+  const shotokuwariBase = Math.max(0, goukei-430000);
+  const keigenBase = kyuyo + (age>=65 ? Math.max(0,zatsu-150000) : zatsu);
+  const isKyuyoSyotokusya = salaryYen>550000 || (age>=65?incomeYen>1250000:incomeYen>600000);
+  const kyuyoCount = isKyuyoSyotokusya?1:0;
+  const base7 = 430000, base5 = 430000+310000, base2 = 430000+570000;
+  let keigenRate=0, label='軽減なし';
+  if(keigenBase<=base7){keigenRate=0.7;label='7割軽減';}
+  else if(keigenBase<=base5){keigenRate=0.5;label='5割軽減';}
+  else if(keigenBase<=base2){keigenRate=0.2;label='2割軽減';}
+  const iryo = round100(Math.min(shotokuwariBase*0.0764+27600*(1-keigenRate)+20000*(1-keigenRate), 660000));
+  const shien = round100(Math.min(shotokuwariBase*0.0327+11500*(1-keigenRate)+8400*(1-keigenRate), 260000));
+  const kosodate = round100(Math.min(shotokuwariBase*0.0031+1900*(1-keigenRate), 30000));
+  let kaigoNoufu = 0;
+  if(age>=40 && age<65) kaigoNoufu = round100(Math.min(shotokuwariBase*0.0303+16900*(1-keigenRate), 170000));
+  return {total: iryo+shien+kosodate+kaigoNoufu, label, keigenRate};
+}
+
+function calcIzoku(){
+  const on = document.getElementById('izoku_on').checked;
+  document.getElementById('izoku_inputs').style.display = on ? '' : 'none';
+  document.getElementById('izoku_result').style.display = on ? '' : 'none';
+  if(!on) return;
+
+  const wAge = parseInt(document.getElementById('w_age').value)||65;
+  const wPensionMan = parseFloat(document.getElementById('w_pension').value)||0;
+  const wSalaryMan = parseFloat(document.getElementById('w_salary').value)||0;
+  const wShaho = document.getElementById('w_shaho').checked;
+  const hKouseiMan = parseFloat(document.getElementById('izoku_h_kousei').value)||0;
+  const wKouseiMan = parseFloat(document.getElementById('izoku_w_kousei').value)||0;
+
+  const wIncome = toYen(wPensionMan);
+  const wSalary = toYen(wSalaryMan);
+  const hKousei = toYen(hKouseiMan);
+  const wKousei = toYen(wKouseiMan);
+
+  // 遺族厚生年金：65歳以上は「①亡夫の報酬比例部分×3/4」と「②①×2/3＋本人の老齢厚生年金×1/2」の高い方を採用し、
+  // そこから本人の老齢厚生年金相当額を差し引いた差額が実際に上乗せ支給される（本人の老齢厚生年金は全額そのまま受給し続ける）
+  const izokuOpt1 = Math.round(hKousei*3/4);
+  const izokuOpt2 = wAge>=65 ? Math.round(izokuOpt1*2/3 + wKousei*1/2) : 0;
+  const izokuMangaku = Math.round(Math.max(izokuOpt1, izokuOpt2));
+  const izokuShikyu = wAge>=65 ? Math.max(0, izokuMangaku - wKousei) : izokuMangaku;
+
+  // 妻ひとりの通常の税・保険料計算（単身世帯として）
+  const wZatsu = zatsuShotoku(wIncome, wAge);
+  const wKyuyoRaw = kyuyoShotoku(wSalary);
+  const wChousei = shotokuChousei(wKyuyoRaw, wZatsu);
+  const wKyuyo = Math.max(0, wKyuyoRaw - wChousei);
+  const wGoukei = wZatsu + wKyuyo;
+
+  const wInNK = wAge<75 && !wShaho;
+  const kokuho = kokuhoSingle(wAge, wZatsu, wKyuyo, wGoukei, wIncome, wSalary, wShaho, false);
+  const wShahoRyou = wShaho ? shahoHonninFutan(wAge, wSalary) : {kenkou:0,nenkin:0,total:0};
+
+  const wJuuminTemp = juuminzeiSingle(wGoukei, kokuho.total+72000);
+  const kaigo = kaigoDankaiSingle(wAge, wZatsu, wGoukei, wIncome, wJuuminTemp.kintouwari>0);
+
+  const wShakaihoken = kokuho.total + kaigo.amount + wShahoRyou.total;
+  const wJuumin = juuminzeiSingle(wGoukei, wShakaihoken);
+  const wKisoKoujo = shotokuzeiKisoKoujo(wGoukei);
+  const wKazeiZei = Math.max(0, wGoukei - wKisoKoujo - wShakaihoken);
+  const wZeigaku = Math.round(shotokuzeiRate(wKazeiZei)*1.021/100)*100;
+
+  const totalDeduct = wZeigaku + wJuumin.total + kaigo.amount + wShahoRyou.total + kokuho.total;
+  const nenkinTotal = wIncome + wSalary; // 額面（遺族年金を除く、課税対象分のみ）
+  const netBeforeIzoku = nenkinTotal - totalDeduct;
+  const netAfterIzoku = netBeforeIzoku + izokuShikyu; // 遺族年金は非課税なのでそのまま加算
+
+  const fmt = n=>'¥'+Math.round(n).toLocaleString();
+  const row = (l,v,c)=>'<tr'+(c?' class="'+c+'"':'')+'><td>'+l+'</td><td style="text-align:right;">'+v+'</td></tr>';
+
+  let html = '<table class="dtrace">';
+  html += row('夫の厚生年金部分（報酬比例部分）', fmt(hKousei));
+  html += row('①報酬比例部分×3/4', fmt(izokuOpt1), 'sub');
+  if(wAge>=65){
+    html += row('妻自身の厚生年金部分（老齢厚生年金）', fmt(wKousei), 'sub');
+    html += row('②①×2/3＋妻の老齢厚生年金×1/2（65歳以上の場合のみ比較）', fmt(izokuOpt2), 'sub');
+    html += row('①②のうち高い方を採用', fmt(izokuMangaku), 'sub');
+    html += row('妻の老齢厚生年金は満額そのまま受給し続けるため、差額のみ上乗せ', '', 'sub');
+  } else {
+    html += row('遺族厚生年金額（①のみ、65歳未満のため②との比較なし）', fmt(izokuMangaku), 'sub');
+  }
+  html += row('実際に支給される遺族厚生年金（非課税）', fmt(izokuShikyu), 'op');
+  html += '</table>';
+
+  html += '<table class="dtrace" style="margin-top:8px;">';
+  html += row('妻の年金・給与収入（額面、老齢基礎年金＋老齢厚生年金＋給与、課税対象分）', fmt(nenkinTotal));
+  html += row('＋遺族厚生年金（実支給額・非課税）', '＋'+fmt(izokuShikyu), 'sub');
+  html += row('年金・収入総額', fmt(nenkinTotal+izokuShikyu), 'op');
+  html += '</table>';
+
+  html += '<table class="dtrace" style="margin-top:8px;">';
+  html += row('妻の年金・給与収入（額面、課税対象分のみ・遺族年金は含まない）', fmt(nenkinTotal));
+  html += row('所得税', '－'+fmt(wZeigaku), 'sub');
+  html += row('住民税', '－'+fmt(wJuumin.total)+(wJuumin.total===0?'（非課税）':''), 'sub');
+  html += row('介護保険料 '+kaigo.label, '－'+fmt(kaigo.amount), 'sub');
+  if(wShaho) html += row('健康保険料・厚生年金保険料（社保）', '－'+fmt(wShahoRyou.total), 'sub');
+  else html += row('国民健康保険税 '+kokuho.label, '－'+fmt(kokuho.total), 'sub');
+  html += row('遺族厚生年金（非課税でそのまま加算）', '＋'+fmt(izokuShikyu), 'sub');
+  html += row('妻ひとりの年間手取り', fmt(netAfterIzoku), 'final');
+  html += row('月額換算', fmt(netAfterIzoku/12));
+  html += '</table>';
+
+  html += '<div class="note" style="margin-top:8px;">'
+    + '遺族基礎年金（子がいる場合の加算）や中高齢寡婦加算などは、要件が複雑なため今回は含めていません。'
+    + '遺族厚生年金は全額非課税のため、税金・介護保険・国保の計算には含めず、手取りにそのまま加算しています。'
+    + '</div>';
+
+  document.getElementById('izoku_result').innerHTML = html;
 }
 
 function switchTab(name){
