@@ -331,7 +331,7 @@
     color:var(--navy);
     font-variant-numeric:tabular-nums;
   }
-  .dtrace{width:100%;border-collapse:collapse;font-size:12px;}
+  .dtrace{width:100%;border-collapse:collapse;font-size:14px;}
   .dtrace td{
     padding:4px 2px;
     border-bottom:1px dashed var(--line);
@@ -436,12 +436,13 @@
     tr.total td{background:#eee !important;}
     tr.section-head td{padding:6px 6px 4px;}
     .note,.note-list{font-size:11pt;line-height:1.7;}
+    .izoku-note{font-size:8.5pt !important;line-height:1.35 !important;padding:6px 8px !important;}
     .note{padding:11px 13px;}
     #panel-notes{page-break-before:always;break-before:page;margin-top:0;}
     .foot{margin-top:12px;font-size:10px;line-height:1.6;}
     .dperson-head{margin:10px 0 6px;}
     .dblock{padding:8px 9px;margin-bottom:6px;}
-    .dtrace{font-size:10px;}
+    .dtrace{font-size:11pt;}
   }
 </style>
 </head>
@@ -564,14 +565,14 @@
       <tr id="row_shaho2" class="deduct"><td>厚生年金保険料（社保・本人負担）</td><td id="c_h_nenkin">-</td><td id="c_w_nenkin">-</td><td id="c_total_nenkin">-</td><td id="m_nenkin">-</td></tr>
 
       <tr class="section-head"><td colspan="5">合算（ここから先は年金・給与を合わせた金額で計算）</td></tr>
-      <tr class="total" style="background:transparent;border-top:1px solid var(--line);"><td>収入額面合計</td><td colspan="2"></td><td id="c_total_income_all">-</td><td id="m_income">-</td></tr>
+      <tr class="total" style="background:transparent;border-top:1px solid var(--line);"><td>収入額面合計</td><td id="c_h_income_all">-</td><td id="c_w_income_all">-</td><td id="c_total_income_all">-</td><td id="m_income">-</td></tr>
       <tr><td>合計所得金額</td><td id="c_h_goukei">-</td><td id="c_w_goukei">-</td><td>-</td><td>-</td></tr>
       <tr class="deduct"><td>所得税</td><td id="c_h_tax">-</td><td id="c_w_tax">-</td><td id="c_total_tax">-</td><td id="m_tax">-</td></tr>
       <tr class="deduct"><td>住民税 <span id="tag_juumin"></span></td><td id="c_h_juumin">-</td><td id="c_w_juumin">-</td><td id="c_total_juumin">-</td><td id="m_juumin">-</td></tr>
       <tr class="deduct"><td>介護保険料 <span id="tag_kaigo"></span></td><td id="c_h_kaigo">-</td><td id="c_w_kaigo">-</td><td id="c_total_kaigo">-</td><td id="m_kaigo">-</td></tr>
-      <tr class="deduct"><td>国保税（世帯合算） <span id="tag_kokuho"></span></td><td colspan="2"></td><td id="c_total_kokuho">-</td><td id="m_kokuho">-</td></tr>
-      <tr class="total"><td>控除合計</td><td colspan="2"></td><td id="c_total_deduct">-</td><td id="m_deduct">-</td></tr>
-      <tr class="total"><td>手取り</td><td colspan="2"></td><td id="c_total_net">-</td><td id="m_net">-</td></tr>
+      <tr class="deduct"><td>国保税（夫婦均等割） <span id="tag_kokuho"></span></td><td id="c_h_kokuho">-</td><td id="c_w_kokuho">-</td><td id="c_total_kokuho">-</td><td id="m_kokuho">-</td></tr>
+      <tr class="total"><td>控除合計</td><td id="c_h_deduct">-</td><td id="c_w_deduct">-</td><td id="c_total_deduct">-</td><td id="m_deduct">-</td></tr>
+      <tr class="total"><td>手取り</td><td id="c_h_net">-</td><td id="c_w_net">-</td><td id="c_total_net">-</td><td id="m_net">-</td></tr>
     </table>
   </div>
 
@@ -600,7 +601,7 @@
           <input type="number" id="izoku_w_kousei" value="0" step="1" min="0" oninput="calc();">
         </div>
       </div>
-      <div class="note" style="margin-top:10px;">
+      <div class="note izoku-note" style="margin-top:10px;">
         どちらの欄も「ねんきん定期便」の年金見込額の内訳にある「厚生年金保険（報酬比例部分）」の欄の金額を入力してください。「老齢厚生年金の合計額」には経過的加算や加給年金が含まれている場合があり、それをそのまま入力すると計算結果が実際とずれます（妻自身の欄も同様で、経過的加算は含めないでください）。報酬比例部分だけを切り分けて入力してください。わからない場合は0のままでも試算できますが、遺族厚生年金は0円として計算されます。
       </div>
     </div>
@@ -988,6 +989,8 @@ function calc(){
   document.getElementById('c_h_salary').textContent = fmt(hSalary);
   document.getElementById('c_w_salary').textContent = wNone?'-':fmt(wSalary);
   document.getElementById('c_total_salary').textContent = fmt(hSalary+wSalary);
+  document.getElementById('c_h_income_all').textContent = fmt(hIncome+hSalary);
+  document.getElementById('c_w_income_all').textContent = wNone?'-':fmt(wIncome+wSalary);
   document.getElementById('c_total_income_all').textContent = fmt(totalIncome);
   document.getElementById('m_income').textContent = fmt(totalIncome/12);
 
@@ -1028,12 +1031,20 @@ function calc(){
   document.getElementById('c_total_kaigo').textContent = fmt(totalKaigo);
   document.getElementById('m_kaigo').textContent = fmt(totalKaigo/12);
 
+  document.getElementById('c_h_kokuho').textContent = hInNK ? fmt(hKokuhoBubun) : '-';
+  document.getElementById('c_w_kokuho').textContent = wNone ? '-' : (wInNK ? fmt(wKokuhoBubun) : '-');
   document.getElementById('c_total_kokuho').textContent = fmt(kokuhoTotal);
   document.getElementById('m_kokuho').textContent = fmt(kokuhoTotal/12);
   document.getElementById('tag_kokuho').innerHTML = keigenRate>0 ? '<span class="tag exempt">'+keigenLabel+'</span>' : (hoken_hisya>0?'<span class="tag taxed">軽減なし</span>':'');
 
+  const hDeductTotal = hZeigaku + hJuumin2.total + hKaigo.amount + hShahoRyou.total + hKokuhoBubun;
+  const wDeductTotal = wNone ? 0 : (wZeigaku + wJuumin.total + wKaigo.amount + wShahoRyou.total + wKokuhoBubun);
+  document.getElementById('c_h_deduct').textContent = fmt(hDeductTotal);
+  document.getElementById('c_w_deduct').textContent = wNone?'-':fmt(wDeductTotal);
   document.getElementById('c_total_deduct').textContent = fmt(totalDeduct);
   document.getElementById('m_deduct').textContent = fmt(totalDeduct/12);
+  document.getElementById('c_h_net').textContent = fmt(hNet);
+  document.getElementById('c_w_net').textContent = wNone?'-':fmt(wNet);
   document.getElementById('c_total_net').textContent = fmt(totalNet);
   document.getElementById('m_net').textContent = fmt(totalNet/12);
 
@@ -1193,7 +1204,7 @@ function calcIzoku(){
   html += row('月額換算', fmt(netAfterIzoku/12));
   html += '</table>';
 
-  html += '<div class="note" style="margin-top:8px;">'
+  html += '<div class="note izoku-note" style="margin-top:8px;">'
     + '遺族基礎年金（子がいる場合の加算）や中高齢寡婦加算などは、要件が複雑なため今回は含めていません。'
     + '遺族厚生年金は全額非課税のため、税金・介護保険・国保の計算には含めず、手取りにそのまま加算しています。'
     + '</div>';
