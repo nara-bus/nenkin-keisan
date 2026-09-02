@@ -381,6 +381,23 @@
     font-size:12px;color:var(--red);background:var(--red-bg);
     border-radius:8px;padding:8px 10px;line-height:1.7;margin-bottom:6px;
   }
+
+  .slot-row{
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+  .slot-row .slot-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:3px;}
+  .slot-row .slot-summary{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px;}
+  .slot-row .slot-empty{font-size:12px;color:var(--muted);margin-bottom:8px;}
+  .slot-row .slot-btns{display:flex;gap:6px;}
+  .slot-btn{
+    font-size:11.5px;font-weight:600;border-radius:8px;padding:6px 12px;cursor:pointer;border:none;
+  }
+  .slot-btn.primary{background:var(--navy);color:#fff;}
+  .slot-btn.danger{background:var(--red-bg);color:var(--red);}
+  .slot-btn.ghost{background:var(--paper);color:var(--muted);border:1px solid var(--line);}
   @media (max-width:480px){
     .person-grid{grid-template-columns:1fr;}
     .result-hero .amount{font-size:27px;}
@@ -452,7 +469,12 @@
 
   <div id="tab-simple">
   <div class="panel" id="panel-input" style="margin-top:12px;">
-    <h2><span class="dot"></span>入力</h2>
+    <h2><span class="dot"></span>入力
+      <span style="margin-left:auto;display:flex;gap:6px;">
+        <button onclick="openSaveModal()" style="font-size:11px;font-weight:600;color:var(--navy);background:var(--gold-bg);border:1px solid #ecdcb3;border-radius:20px;padding:5px 12px;cursor:pointer;">保存</button>
+        <button onclick="openLoadModal()" style="font-size:11px;font-weight:600;color:var(--navy);background:var(--gold-bg);border:1px solid #ecdcb3;border-radius:20px;padding:5px 12px;cursor:pointer;">読込</button>
+      </span>
+    </h2>
     <div class="person-grid">
       <div class="person">
         <div class="person-head">
@@ -465,7 +487,7 @@
         </div>
         <div class="field">
           <label>年金収入（年額）<span class="unit">万円</span></label>
-          <input type="number" id="h_pension" value="200" step="1" min="0">
+          <input type="number" id="h_pension" value="0" step="1" min="0">
         </div>
         <div class="field">
           <label>給与収入（年額・あれば）<span class="unit">万円</span></label>
@@ -487,7 +509,7 @@
         </div>
         <div class="field">
           <label>年金収入（年額）<span class="unit">万円</span></label>
-          <input type="number" id="w_pension" value="86.5" step="0.1" min="0">
+          <input type="number" id="w_pension" value="0" step="0.1" min="0">
         </div>
         <div class="field">
           <label>給与収入（年額・あれば）<span class="unit">万円</span></label>
@@ -610,6 +632,16 @@
       基準：広陵町・令和8年度（国保税率・介護保険料第9期・住民税非課税限度額）／協会けんぽ奈良支部・令和8年度（社保料率）。
       標準報酬月額は等級表を使わず年収ベースの概算です。国保税は加入者間で人数按分（均等折半）した参考値です。
     </div>
+  </div>
+</div>
+
+<div id="save_modal_overlay" style="display:none;position:fixed;inset:0;background:rgba(22,35,46,.55);z-index:100;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;">
+      <h3 id="save_modal_title" style="margin:0;font-size:14px;font-weight:700;color:var(--navy);">保存</h3>
+      <button onclick="closeSaveModal()" style="border:none;background:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="save_modal_body" style="padding:14px 18px 18px;"></div>
   </div>
 </div>
 
@@ -1167,6 +1199,135 @@ function calcIzoku(){
     + '</div>';
 
   document.getElementById('izoku_result').innerHTML = html;
+}
+
+// ---- 保存・読込（localStorage、3枠固定） ----
+const SAVE_KEY = 'nenkin_calc_saves_v1';
+
+function getSaves(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    const arr = raw ? JSON.parse(raw) : [null,null,null];
+    while(arr.length<3) arr.push(null);
+    return arr;
+  }catch(e){ return [null,null,null]; }
+}
+function setSaves(arr){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(arr)); }catch(e){}
+}
+
+function readCurrentInputs(){
+  return {
+    hAge: document.getElementById('h_age').value,
+    hPension: document.getElementById('h_pension').value,
+    hSalary: document.getElementById('h_salary').value,
+    hShaho: document.getElementById('h_shaho').checked,
+    wAge: document.getElementById('w_age').value,
+    wPension: document.getElementById('w_pension').value,
+    wSalary: document.getElementById('w_salary').value,
+    wShaho: document.getElementById('w_shaho').checked,
+    wNone: document.getElementById('w_none').checked,
+    izokuOn: document.getElementById('izoku_on').checked,
+    izokuHKousei: document.getElementById('izoku_h_kousei').value,
+    izokuWKousei: document.getElementById('izoku_w_kousei').value,
+    savedAt: new Date().toLocaleString('ja-JP', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+  };
+}
+
+function applyInputs(d){
+  document.getElementById('h_age').value = d.hAge;
+  document.getElementById('h_pension').value = d.hPension;
+  document.getElementById('h_salary').value = d.hSalary;
+  document.getElementById('h_shaho').checked = d.hShaho;
+  document.getElementById('w_age').value = d.wAge;
+  document.getElementById('w_pension').value = d.wPension;
+  document.getElementById('w_salary').value = d.wSalary;
+  document.getElementById('w_shaho').checked = d.wShaho;
+  document.getElementById('w_none').checked = d.wNone;
+  document.getElementById('w_pension').disabled = d.wNone;
+  document.getElementById('w_salary').disabled = d.wNone;
+  document.getElementById('w_shaho').disabled = d.wNone;
+  document.getElementById('izoku_on').checked = !!d.izokuOn;
+  document.getElementById('izoku_h_kousei').value = d.izokuHKousei || 0;
+  document.getElementById('izoku_w_kousei').value = d.izokuWKousei || 0;
+  calc();
+}
+
+function summaryText(d){
+  let s = '夫：'+d.hAge+'歳・年金'+d.hPension+'万円'+(Number(d.hSalary)>0?'・給与'+d.hSalary+'万円':'')+(d.hShaho?'（社保）':'');
+  if(!d.wNone){
+    s += '／妻：'+d.wAge+'歳・年金'+d.wPension+'万円'+(Number(d.wSalary)>0?'・給与'+d.wSalary+'万円':'')+(d.wShaho?'（社保）':'');
+  } else {
+    s += '／単身世帯';
+  }
+  if(d.izokuOn){
+    s += '<br>遺族年金試算あり（夫の厚生年金部分'+(d.izokuHKousei||0)+'万円・妻の厚生年金部分'+(d.izokuWKousei||0)+'万円）';
+  }
+  return s + '<br>' + d.savedAt + ' 保存';
+}
+
+function openSaveModal(){
+  document.getElementById('save_modal_title').textContent = '保存';
+  renderSlots('save');
+  document.getElementById('save_modal_overlay').style.display = 'flex';
+}
+function openLoadModal(){
+  document.getElementById('save_modal_title').textContent = '読込';
+  renderSlots('load');
+  document.getElementById('save_modal_overlay').style.display = 'flex';
+}
+function closeSaveModal(){
+  document.getElementById('save_modal_overlay').style.display = 'none';
+}
+
+function renderSlots(mode){
+  const saves = getSaves();
+  const body = document.getElementById('save_modal_body');
+  let html = '';
+  for(let i=0;i<3;i++){
+    const d = saves[i];
+    html += '<div class="slot-row"><div class="slot-title">保存'+(i+1)+'</div>';
+    if(d){
+      html += '<div class="slot-summary">'+summaryText(d)+'</div>';
+      html += '<div class="slot-btns">';
+      if(mode==='load'){
+        html += '<button class="slot-btn primary" onclick="doLoad('+i+')">読み込む</button>';
+        html += '<button class="slot-btn danger" onclick="doDelete('+i+',\'load\')">削除</button>';
+      } else {
+        html += '<button class="slot-btn primary" onclick="doSave('+i+')">上書き保存</button>';
+        html += '<button class="slot-btn danger" onclick="doDelete('+i+',\'save\')">削除</button>';
+      }
+      html += '</div>';
+    } else {
+      html += '<div class="slot-empty">空き</div>';
+      if(mode==='save'){
+        html += '<div class="slot-btns"><button class="slot-btn primary" onclick="doSave('+i+')">ここに保存</button></div>';
+      } else {
+        html += '<div class="slot-btns"><button class="slot-btn ghost" disabled style="cursor:not-allowed;">データなし</button></div>';
+      }
+    }
+    html += '</div>';
+  }
+  html += '<button class="slot-btn ghost" style="width:100%;margin-top:4px;" onclick="closeSaveModal()">キャンセル</button>';
+  body.innerHTML = html;
+}
+
+function doSave(i){
+  const saves = getSaves();
+  saves[i] = readCurrentInputs();
+  setSaves(saves);
+  renderSlots('save');
+}
+function doLoad(i){
+  const saves = getSaves();
+  if(saves[i]){ applyInputs(saves[i]); }
+  closeSaveModal();
+}
+function doDelete(i, mode){
+  const saves = getSaves();
+  saves[i] = null;
+  setSaves(saves);
+  renderSlots(mode);
 }
 
 function switchTab(name){
