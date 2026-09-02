@@ -596,12 +596,12 @@
           <input type="number" id="izoku_h_kousei" value="0" step="1" min="0" oninput="calc();">
         </div>
         <div class="field">
-          <label>妻自身の厚生年金部分（年額・あれば）<span class="unit">万円</span></label>
+          <label>妻自身の厚生年金部分（報酬比例部分・年額・あれば）<span class="unit">万円</span></label>
           <input type="number" id="izoku_w_kousei" value="0" step="1" min="0" oninput="calc();">
         </div>
       </div>
       <div class="note" style="margin-top:10px;">
-        「ねんきん定期便」の年金見込額の内訳にある「厚生年金保険（報酬比例部分）」の欄の金額を入力してください。「老齢厚生年金の合計額」には経過的加算や加給年金が含まれている場合があり、それをそのまま入力すると遺族厚生年金が実際より多く出ます。報酬比例部分だけを切り分けて入力してください。わからない場合は0のままでも試算できますが、遺族厚生年金は0円として計算されます。
+        どちらの欄も「ねんきん定期便」の年金見込額の内訳にある「厚生年金保険（報酬比例部分）」の欄の金額を入力してください。「老齢厚生年金の合計額」には経過的加算や加給年金が含まれている場合があり、それをそのまま入力すると計算結果が実際とずれます（妻自身の欄も同様で、経過的加算は含めないでください）。報酬比例部分だけを切り分けて入力してください。わからない場合は0のままでも試算できますが、遺族厚生年金は0円として計算されます。
       </div>
     </div>
     <div id="izoku_result" style="display:none;margin-top:12px;"></div>
@@ -1165,7 +1165,7 @@ function calcIzoku(){
   html += row('夫の厚生年金部分（報酬比例部分）', fmt(hKousei));
   html += row('①報酬比例部分×3/4', fmt(izokuOpt1), 'sub');
   if(wAge>=65){
-    html += row('妻自身の厚生年金部分（老齢厚生年金）', fmt(wKousei), 'sub');
+    html += row('妻自身の厚生年金部分（報酬比例部分）', fmt(wKousei), 'sub');
     html += row('②①×2/3＋妻の老齢厚生年金×1/2（65歳以上の場合のみ比較）', fmt(izokuOpt2), 'sub');
     html += row('①②のうち高い方を採用', fmt(izokuMangaku), 'sub');
     html += row('妻の老齢厚生年金は満額そのまま受給し続けるため、差額のみ上乗せ', '', 'sub');
