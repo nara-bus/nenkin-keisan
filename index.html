@@ -892,6 +892,8 @@ function calc(){
   const hHantei = juuminHantei(hAge, hGoukei, wIsDependent);
 
   // ---- 介護保険料（65歳以上のみ第1号被保険者。段階判定は合計所得金額ベース） ----
+  // 第1〜3段階の金額は広陵町公式資料（令和6〜8年度）の「軽減後」実賦課額を使用（第1段階20,520円・第2段階34,920円・第3段階49,320円）。
+  // 段階判定は「本人の課税年金収入＋合計所得金額」の合計（広陵町公式資料の文言通り）。
   function kaigoDankai(age, goukei, incomeYen, isKazeisha, setaiHasKazeisha){
     if(age>=40 && age<65) return {label:'対象外（国保の介護納付金分に含む）', amount:0};
     if(age<40) return {label:'対象外（介護保険の対象年齢外）', amount:0};
@@ -909,9 +911,9 @@ function calc(){
       if(kazeiNenkinGoukei<=826500) return {label:'第4段階', amount:64800};
       return {label:'第5段階', amount:72000};
     } else {
-      if(kazeiNenkinGoukei<=826500) return {label:'第1段階', amount:32760};
-      if(kazeiNenkinGoukei<=1200000) return {label:'第2段階', amount:49320};
-      return {label:'第3段階', amount:49680};
+      if(kazeiNenkinGoukei<=826500) return {label:'第1段階', amount:20520};
+      if(kazeiNenkinGoukei<=1200000) return {label:'第2段階', amount:34920};
+      return {label:'第3段階', amount:49320};
     }
   }
 
@@ -1121,9 +1123,9 @@ function kaigoDankaiSingle(age, zatsu, goukei, incomeYen, isKazeisha){
     if(goukei<7200000) return {label:'第12段階', amount:165600};
     return {label:'第13段階', amount:172800};
   }
-  if(kazeiNenkinGoukei<=826500) return {label:'第1段階（世帯全員非課税）', amount:32760};
-  if(kazeiNenkinGoukei<=1200000) return {label:'第2段階（世帯全員非課税）', amount:49320};
-  return {label:'第3段階（世帯全員非課税）', amount:49680};
+  if(kazeiNenkinGoukei<=826500) return {label:'第1段階（世帯全員非課税）', amount:20520};
+  if(kazeiNenkinGoukei<=1200000) return {label:'第2段階（世帯全員非課税）', amount:34920};
+  return {label:'第3段階（世帯全員非課税）', amount:49320};
 }
 function kokuhoSingle(age, zatsu, kyuyo, goukei, incomeYen, salaryYen, isShaho, isFuyou){
   if(isShaho || isFuyou || age>=75) return {total:0, label:isShaho?'社保加入のため対象外':(isFuyou?'被扶養者のため対象外':'75歳以上（後期高齢者医療）'), keigenRate:0};
