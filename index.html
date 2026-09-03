@@ -702,7 +702,9 @@ function shotokuzeiRate(taxable){
   if(taxable<=3300000) return taxable*0.10-97500;
   if(taxable<=6950000) return taxable*0.20-427500;
   if(taxable<=9000000) return taxable*0.23-636000;
-  return taxable*0.33-1536000;
+  if(taxable<=18000000) return taxable*0.33-1536000;
+  if(taxable<=40000000) return taxable*0.40-2796000;
+  return taxable*0.45-4796000;
 }
 
 // 令和7年度税制改正で給与所得控除の最低保障額が55万円→65万円に引き上げ。
@@ -740,15 +742,21 @@ function shotokuChousei(kyuyo, zatsu){
 // 給与から天引きされる社会保険料（本人負担分）。協会けんぽ奈良支部・令和8年度料率（9.91%）＋
 // 子ども・子育て支援金率（0.23%）＋40〜64歳は介護保険料率（1.62%）を加算し、労使折半で2で割る。
 // 厚生年金保険料率は全国一律18.3%（本人負担9.15%）。標準報酬月額の上限にあわせ年収ベースで概算の上限を設ける。
+// 70歳以上は厚生年金保険の被保険者ではないため厚生年金保険料は0円。
+// 75歳以上は後期高齢者医療制度へ移行するため協会けんぽ健康保険料も0円（後期高齢者医療の保険料はこの簡易計算では未計算）。
 function shahoHonninFutan(age, salaryYen){
   if(salaryYen<=0) return {kenkou:0, nenkin:0, total:0};
   const kenkouBase = Math.min(salaryYen, 16680000); // 健康保険：標準報酬月額上限139万円×12
   const kenkouRate = 0.0991 + 0.0023 + (age>=40 && age<65 ? 0.0162 : 0);
-  const kenkou = round100(kenkouBase*kenkouRate/2);
+  const kenkou = age>=75 ? 0 : round100(kenkouBase*kenkouRate/2);
   const nenkinBase = Math.min(salaryYen, 7800000); // 厚生年金：標準報酬月額上限65万円×12
-  const nenkin = round100(nenkinBase*0.183/2);
+  const nenkin = age>=70 ? 0 : round100(nenkinBase*0.183/2);
   return {kenkou, nenkin, total:kenkou+nenkin};
 }
+
+// 在職老齢年金：65歳以上で給与がある場合、老齢厚生年金の一部が支給停止されることがある制度。
+// 本アプリでは老齢厚生年金部分（報酬比例部分）の内訳までは入力させず、対象になり得ることの注意表示のみ行う
+// （支給停止額の計算はしない＝入力欄を増やさずシンプルさを優先）。
 
 function calc(){
   const hAge = parseInt(document.getElementById('h_age').value)||65;
@@ -762,9 +770,13 @@ function calc(){
   const wShaho = (!wNone) && document.getElementById('w_shaho').checked;
 
   const hIncome = toYen(hPensionMan);
-  const wIncome = toYen(wPensionMan);
+  const wIncome = wNone?0:toYen(wPensionMan);
   const hSalary = toYen(hSalaryMan);
   const wSalary = toYen(wSalaryMan);
+
+  // 在職老齢年金の対象になり得るかどうか（65歳以上・給与あり）。支給停止額は計算せず注意表示のみ。
+  const hZaishokuTaisho = hAge>=65 && hSalary>0;
+  const wZaishokuTaisho = (!wNone) && wAge>=65 && wSalary>0;
 
   const hZatsu = zatsuShotoku(hIncome, hAge);
   const wZatsu = zatsuShotoku(wIncome, wAge);
@@ -883,7 +895,7 @@ function calc(){
   function kaigoDankai(age, goukei, incomeYen, isKazeisha, setaiHasKazeisha){
     if(age>=40 && age<65) return {label:'対象外（国保の介護納付金分に含む）', amount:0};
     if(age<40) return {label:'対象外（介護保険の対象年齢外）', amount:0};
-    const kazeiNenkinGoukei = incomeYen + Math.max(0, goukei - zatsuShotoku(incomeYen,age)); // 課税年金収入＋年金以外の合計所得
+    const kazeiNenkinGoukei = incomeYen + goukei; // 本人の課税年金収入＋合計所得金額（広陵町の段階判定基準）
     if(isKazeisha){
       if(goukei<1200000) return {label:'第6段階', amount:86400};
       if(goukei<2100000) return {label:'第7段階', amount:93600};
@@ -897,9 +909,9 @@ function calc(){
       if(kazeiNenkinGoukei<=826500) return {label:'第4段階', amount:64800};
       return {label:'第5段階', amount:72000};
     } else {
-      if(kazeiNenkinGoukei<=826500) return {label:'第1段階', amount:20520};
-      if(kazeiNenkinGoukei<=1200000) return {label:'第2段階', amount:34920};
-      return {label:'第3段階', amount:49320};
+      if(kazeiNenkinGoukei<=826500) return {label:'第1段階', amount:32760};
+      if(kazeiNenkinGoukei<=1200000) return {label:'第2段階', amount:49320};
+      return {label:'第3段階', amount:49680};
     }
   }
 
@@ -957,6 +969,7 @@ function calc(){
   const D = {
     hAge, wAge, wNone, hShaho, wShaho,
     hIncome, wIncome, hSalary, wSalary,
+    hZaishokuTaisho, wZaishokuTaisho,
     hZatsu, wZatsu, hKyuyoRaw, wKyuyoRaw, hKyuyo, wKyuyo,
     hChousei: shotokuChousei(hKyuyoRaw, hZatsu), wChousei: shotokuChousei(wKyuyoRaw, wZatsu),
     hGoukei, wGoukei, wIsDependent, wCanSpouseKoujo, wIsRoujin,
@@ -1066,6 +1079,12 @@ function calc(){
   if(wShaho) notes.push('妻は給与先の社会保険に加入のため国保の対象外（介護保険第1号は65歳以上なら別途市町村から賦課）。健康保険料・厚生年金保険料の本人負担額は概算で計算し、手取りと社会保険料控除の両方に反映済みです');
   if(wIsFuyouOfH) notes.push('妻は夫の健康保険の被扶養者に認定され、妻自身は国保・保険料負担なし（妻の年収 '+Math.round((wIncome+wSalary)/10000)+'万円が収入基準未満・かつ夫の年収の半分未満のため。介護保険第1号のみ65歳以上なら別途）');
   if(hIsFuyouOfW) notes.push('夫は妻の健康保険の被扶養者に認定され、夫自身は国保・保険料負担なし（夫の年収 '+Math.round((hIncome+hSalary)/10000)+'万円が収入基準未満・かつ妻の年収の半分未満のため。介護保険第1号のみ65歳以上なら別途）');
+  if(hZaishokuTaisho) notes.push('夫は在職老齢年金の対象になり得ます（65歳以上・給与あり）。老齢厚生年金の一部が支給停止される場合がありますが、本アプリでは反映しておらず、年金額は満額として計算しています（実際の受給額はこの試算より少なくなる可能性があります）');
+  if(wZaishokuTaisho) notes.push('妻は在職老齢年金の対象になり得ます（65歳以上・給与あり）。老齢厚生年金の一部が支給停止される場合がありますが、本アプリでは反映しておらず、年金額は満額として計算しています（実際の受給額はこの試算より少なくなる可能性があります）');
+  if(hAge>=70 && hShaho) notes.push('夫は70歳以上のため厚生年金保険料は0円で計算しています');
+  if(!wNone && wAge>=70 && wShaho) notes.push('妻は70歳以上のため厚生年金保険料は0円で計算しています');
+  if(hAge>=75) notes.push('夫は75歳以上のため後期高齢者医療制度の対象です（協会けんぽ健康保険料・国保税は0円で計算。後期高齢者医療の保険料はこの簡易計算では未計算です）');
+  if(!wNone && wAge>=75) notes.push('妻は75歳以上のため後期高齢者医療制度の対象です（協会けんぽ健康保険料・国保税は0円で計算。後期高齢者医療の保険料はこの簡易計算では未計算です）');
   document.getElementById('notes').innerHTML = notes.map(n=>'<li>'+n+'</li>').join('');
   calcIzoku();
 }
@@ -1091,7 +1110,7 @@ function juuminzeiSingle(goukei, shakaihokenKoujo){
 function kaigoDankaiSingle(age, zatsu, goukei, incomeYen, isKazeisha){
   if(age>=40 && age<65) return {label:'対象外（国保の介護納付金分に含む）', amount:0};
   if(age<40) return {label:'対象外（介護保険の対象年齢外）', amount:0};
-  const kazeiNenkinGoukei = incomeYen + Math.max(0, goukei - zatsu);
+  const kazeiNenkinGoukei = incomeYen + goukei; // 本人の課税年金収入＋合計所得金額（広陵町の段階判定基準）
   if(isKazeisha){
     if(goukei<1200000) return {label:'第6段階', amount:86400};
     if(goukei<2100000) return {label:'第7段階', amount:93600};
@@ -1102,9 +1121,9 @@ function kaigoDankaiSingle(age, zatsu, goukei, incomeYen, isKazeisha){
     if(goukei<7200000) return {label:'第12段階', amount:165600};
     return {label:'第13段階', amount:172800};
   }
-  if(kazeiNenkinGoukei<=826500) return {label:'第1段階（世帯全員非課税）', amount:20520};
-  if(kazeiNenkinGoukei<=1200000) return {label:'第2段階（世帯全員非課税）', amount:34920};
-  return {label:'第3段階（世帯全員非課税）', amount:49320};
+  if(kazeiNenkinGoukei<=826500) return {label:'第1段階（世帯全員非課税）', amount:32760};
+  if(kazeiNenkinGoukei<=1200000) return {label:'第2段階（世帯全員非課税）', amount:49320};
+  return {label:'第3段階（世帯全員非課税）', amount:49680};
 }
 function kokuhoSingle(age, zatsu, kyuyo, goukei, incomeYen, salaryYen, isShaho, isFuyou){
   if(isShaho || isFuyou || age>=75) return {total:0, label:isShaho?'社保加入のため対象外':(isFuyou?'被扶養者のため対象外':'75歳以上（後期高齢者医療）'), keigenRate:0};
@@ -1379,6 +1398,29 @@ function renderDetail(D){
     lines.push('入力条件と計算モデルの間に矛盾は検出されませんでした。');
     consistHtml = '<div class="dconsist-ok">'+lines.join('<br>')+'</div>';
   }
+
+  // 年齢に応じた制度適用状況（在職老齢年金・70歳以上の厚生年金保険料・75歳以上の健康保険）
+  function ageStatusLines(label, age, salary, taisho, shaho){
+    const l = [];
+    if(taisho){
+      l.push(label+'：在職老齢年金の対象になり得ます（65歳以上・給与あり）。支給停止額はこのアプリでは計算しておらず、年金は満額で計算しています。');
+    } else if(age>=65 && salary<=0){
+      l.push(label+'：年金のみ・給与なしのため在職老齢年金による支給停止の対象外。');
+    }
+    if(shaho){
+      if(age>=70) l.push(label+'：70歳以上のため厚生年金保険料は0円。');
+      if(age>=75) l.push(label+'：75歳以上のため協会けんぽ健康保険料は0円（後期高齢者医療の保険料は未計算）。');
+    } else if(age>=75){
+      l.push(label+'：75歳以上のため後期高齢者医療制度の対象（この簡易計算では後期高齢者医療の保険料は未計算）。');
+    }
+    return l;
+  }
+  const ageLines = ageStatusLines('夫', D.hAge, D.hSalary, D.hZaishokuTaisho, D.hShaho);
+  if(!D.wNone) ageLines.push(...ageStatusLines('妻', D.wAge, D.wSalary, D.wZaishokuTaisho, D.wShaho));
+  if(ageLines.length){
+    consistHtml += '<div class="dconsist-ok" style="margin-top:8px;">'+ageLines.join('<br>')+'</div>';
+  }
+
   document.getElementById('d_consistency').innerHTML = consistHtml;
 
   // ---------- 個人ブロック生成 ----------
@@ -1390,6 +1432,7 @@ function renderDetail(D){
         +'<div class="dblock"><h3>入力なし（単身世帯として計算）</h3></div>';
     }
     const income = side==='h'?D.hIncome:D.wIncome;
+    const zaishokuTaisho = side==='h'?D.hZaishokuTaisho:D.wZaishokuTaisho;
     const salary = side==='h'?D.hSalary:D.wSalary;
     const zatsu = side==='h'?D.hZatsu:D.wZatsu;
     const kyuyoRaw = side==='h'?D.hKyuyoRaw:D.wKyuyoRaw;
@@ -1415,7 +1458,8 @@ function renderDetail(D){
 
     // 年金
     html += '<div class="dblock"><h3>年金 <span class="result">'+fmt(zatsu)+'</span></h3><table class="dtrace">'
-      + row('年金収入（額面）', fmt(income))
+      + row('年金収入（額面・老齢厚生年金＋老齢基礎年金）', fmt(income))
+      + (zaishokuTaisho ? row('在職老齢年金の対象', '65歳以上・給与あり → 対象。支給停止額はこのアプリでは計算せず、年金は満額で計算しています', 'sub') : '')
       + row('公的年金等控除の考え方', pensionKoujoLabel, 'sub')
       + row('雑所得（年金控除後）', fmt(zatsu), 'op')
       + '</table></div>';
@@ -1460,7 +1504,7 @@ function renderDetail(D){
       + (side==='h' ? row('配偶者控除', haiguushaKoujoZei>0 ? '－'+fmt(haiguushaKoujoZei) : '対象外', 'sub') : '')
       + row('社会保険料控除（本人負担分：国保按分・介護保険・社保料の合計）', '－'+fmt(shakaihokenKojin), 'sub')
       + row('課税所得', fmt(kazei), 'op')
-      + row('税率区分の適用', kazei<=1950000?'195万円以下：5%':(kazei<=3300000?'195〜330万円：10%（控除97,500円）':(kazei<=6950000?'330〜695万円：20%（控除427,500円）':'695万円超：上位区分')), 'sub')
+      + row('税率区分の適用', kazei<=1950000?'195万円以下：5%':(kazei<=3300000?'195〜330万円：10%（控除97,500円）':(kazei<=6950000?'330〜695万円：20%（控除427,500円）':(kazei<=9000000?'695〜900万円：23%（控除636,000円）':(kazei<=18000000?'900〜1,800万円：33%（控除1,536,000円）':(kazei<=40000000?'1,800〜4,000万円：40%（控除2,796,000円）':'4,000万円超：45%（控除4,796,000円）'))))), 'sub')
       + row('復興特別所得税', '基準額×2.1%を加算', 'sub')
       + row('所得税額（最終）', fmt(zeigaku), 'final')
       + '</table></div>';
@@ -1510,7 +1554,7 @@ function renderDetail(D){
       + (inNK ? (
           row('世帯の国保税（医療分＋支援金分＋子育て分＋介護納付金分）', fmt(D.kokuhoTotal), 'sub')
           + row('世帯の軽減判定', D.keigenLabel+'（判定所得 '+man(D.hantei)+'）', 'sub')
-          + row('按分方法', '加入者数（'+D.hoken_hisya+'人）で均等折半', 'sub')
+          + row('按分方法', '加入者数（'+D.hoken_hisya+'人）で均等折半（正式な個人別賦課ではなく、世帯手取りを見やすくするための参考按分）', 'sub')
           + row('本人負担分（按分後）', fmt(kokuhoBubun), 'final')
         ) : '')
       + '</table></div>';
