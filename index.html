@@ -341,6 +341,7 @@
   .dtrace td:last-child{text-align:right;font-weight:400;color:var(--navy);}
   .dtrace tr.sub td:first-child{padding-left:14px;color:var(--muted);font-weight:400;}
   .dtrace tr.op td:first-child{color:var(--gold-deep);font-weight:600;}
+  .dtrace tr.bold td{font-weight:700;}
   .dtrace tr:last-child td{border-bottom:none;}
   .dtrace tr.final td{font-weight:700;border-top:1.5px solid var(--navy);padding-top:6px;}
   .dtrace tr.final td:last-child{color:var(--red);}
@@ -404,8 +405,11 @@
     .mini-stats{grid-template-columns:1fr 1fr;}
   }
 .print-only{display:none;}
+.izoku-print-val{display:none;}
   @media print{
     .print-only{display:block !important;font-size:14px;font-weight:500;color:#000;line-height:1.5;margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid #999;}
+    .izoku-input{display:none;}
+    .izoku-print-val{display:block !important;font-size:14px;font-weight:600;color:#000;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;}
   }
   @media print{
     body{background:#fff;padding:0;font-size:12px;}
@@ -594,11 +598,13 @@
       <div class="person-grid">
         <div class="field">
           <label>夫の年金のうち厚生年金部分（報酬比例部分・年額）<span class="unit">万円</span></label>
-          <input type="number" id="izoku_h_kousei" value="0" step="1" min="0" oninput="calc();">
+          <input type="number" id="izoku_h_kousei" value="0" step="1" min="0" oninput="calc();" class="izoku-input">
+          <span class="izoku-print-val" id="izoku_h_kousei_print"></span>
         </div>
         <div class="field">
           <label>妻自身の厚生年金部分（報酬比例部分・年額・あれば）<span class="unit">万円</span></label>
-          <input type="number" id="izoku_w_kousei" value="0" step="1" min="0" oninput="calc();">
+          <input type="number" id="izoku_w_kousei" value="0" step="1" min="0" oninput="calc();" class="izoku-input">
+          <span class="izoku-print-val" id="izoku_w_kousei_print"></span>
         </div>
       </div>
       <div class="note izoku-note" style="margin-top:10px;">
@@ -1043,8 +1049,8 @@ function calc(){
   document.getElementById('c_w_deduct').textContent = wNone?'-':fmt(wDeductTotal);
   document.getElementById('c_total_deduct').textContent = fmt(totalDeduct);
   document.getElementById('m_deduct').textContent = fmt(totalDeduct/12);
-  document.getElementById('c_h_net').textContent = fmt(hNet);
-  document.getElementById('c_w_net').textContent = wNone?'-':fmt(wNet);
+  document.getElementById('c_h_net').innerHTML = fmt(hNet)+'<br><span style="font-size:0.95em;color:var(--muted);font-weight:400;">（'+fmt(hNet/12)+'）</span>';
+  document.getElementById('c_w_net').innerHTML = wNone?'-':(fmt(wNet)+'<br><span style="font-size:0.95em;color:var(--muted);font-weight:400;">（'+fmt(wNet/12)+'）</span>');
   document.getElementById('c_total_net').textContent = fmt(totalNet);
   document.getElementById('m_net').textContent = fmt(totalNet/12);
 
@@ -1137,6 +1143,9 @@ function calcIzoku(){
   const hKousei = toYen(hKouseiMan);
   const wKousei = toYen(wKouseiMan);
 
+  document.getElementById('izoku_h_kousei_print').textContent = hKouseiMan+'万円';
+  document.getElementById('izoku_w_kousei_print').textContent = wKouseiMan+'万円';
+
   // 遺族厚生年金：65歳以上は「①亡夫の報酬比例部分×3/4」と「②①×2/3＋本人の老齢厚生年金×1/2」の高い方を採用し、
   // そこから本人の老齢厚生年金相当額を差し引いた差額が実際に上乗せ支給される（本人の老齢厚生年金は全額そのまま受給し続ける）
   const izokuOpt1 = Math.round(hKousei*3/4);
@@ -1183,13 +1192,13 @@ function calcIzoku(){
   } else {
     html += row('遺族厚生年金額（①のみ、65歳未満のため②との比較なし）', fmt(izokuMangaku), 'sub');
   }
-  html += row('実際に支給される遺族厚生年金（非課税）', fmt(izokuShikyu), 'op');
+  html += row('実際に支給される遺族厚生年金（非課税）', fmt(izokuShikyu), 'bold');
   html += '</table>';
 
   html += '<table class="dtrace" style="margin-top:8px;">';
   html += row('妻の年金・給与収入（額面、老齢基礎年金＋老齢厚生年金＋給与、課税対象分）', fmt(nenkinTotal));
   html += row('＋遺族厚生年金（実支給額・非課税）', '＋'+fmt(izokuShikyu), 'sub');
-  html += row('年金・収入総額', fmt(nenkinTotal+izokuShikyu), 'op');
+  html += row('年金・収入総額', fmt(nenkinTotal+izokuShikyu), 'bold');
   html += '</table>';
 
   html += '<table class="dtrace" style="margin-top:8px;">';
@@ -1201,7 +1210,7 @@ function calcIzoku(){
   else html += row('国民健康保険税 '+kokuho.label, '－'+fmt(kokuho.total), 'sub');
   html += row('遺族厚生年金（非課税でそのまま加算）', '＋'+fmt(izokuShikyu), 'sub');
   html += row('妻ひとりの年間手取り', fmt(netAfterIzoku), 'final');
-  html += row('月額換算', fmt(netAfterIzoku/12));
+  html += row('月額換算', fmt(netAfterIzoku/12), 'bold');
   html += '</table>';
 
   html += '<div class="note izoku-note" style="margin-top:8px;">'

@@ -1,4 +1,4 @@
-const APP_VERSION = '20260902-010';
+const APP_VERSION = '20260902-014';
 const CACHE_NAME = 'nenkin-calc-' + APP_VERSION;
 
 const ASSETS = [
