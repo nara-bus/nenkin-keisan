@@ -674,12 +674,13 @@ function zatsuShotoku(incomeYen, age){
   }
 }
 
-// 令和7年度税制改正（令和7年分以後の所得税・令和8年度住民税から適用）で48万円→58万円に引き上げ
-// 令和7年度税制改正（令和7年分以後の所得税・令和8年度住民税から適用）で48万円→58万円に引き上げ。
-// 所得税は95万円のところでもう一段階刻みがあるが、住民税は58万円超100万円以下が33万円で均一（国税庁No.1195／自治体公式資料で確認）
+// 所得税：令和8年度税制改正（令和8年分以後）で配偶者の所得要件が58万円→62万円に引き上げ（62万円超133万円以下は配偶者特別控除、
+// 上限133万円は据え置き。各段階の金額・上限は令和7年分から変更なしと確認）。
+// 住民税：令和8年度住民税は前年（令和7年分）の所得を基準に課税されるため、令和7年度改正時の58万円のまま。
 function haigushaKoujoTable(spouseIncome, isRoujin, forJuuminzei){
   const full = forJuuminzei ? (isRoujin?380000:330000) : (isRoujin?480000:380000);
-  if(spouseIncome<=580000) return full;
+  const fullThreshold = forJuuminzei ? 580000 : 620000;
+  if(spouseIncome<=fullThreshold) return full;
   if(forJuuminzei){
     if(spouseIncome<=1000000) return 330000;
   } else {
@@ -707,13 +708,15 @@ function shotokuzeiRate(taxable){
   return taxable*0.45-4796000;
 }
 
-// 令和7年度税制改正で給与所得控除の最低保障額が55万円→65万円に引き上げ。
-// これに伴い、収入190万円以下は一律65万円（旧：162.5万円以下55万円＋162.5〜180万円の中間区分は廃止・統合）
+// 令和8年度税制改正（令和8年分以後の所得税に適用）で給与所得控除の最低保障額が65万円→74万円に引き上げ。
+// 収入220万円以下は一律74万円（国税庁「令和8年度の税制改正による源泉所得税関係の改正」で確認。
+// 219.1万〜220万円の間は端数調整の特例があるが、概算アプリのため74万円一律で近似）。
+// 220万円超の区分（30%+8万・20%+44万・10%+110万）と850万円超の上限195万円は据え置き。
 function kyuyoShotoku(incomeYen){
   const inc = incomeYen;
   if(inc<=0) return 0;
   let koujo;
-  if(inc<=1900000) koujo = 650000;
+  if(inc<=2200000) koujo = 740000;
   else if(inc<=3600000) koujo = inc*0.3+80000;
   else if(inc<=6600000) koujo = inc*0.2+440000;
   else if(inc<=8500000) koujo = inc*0.1+1100000;
@@ -721,13 +724,13 @@ function kyuyoShotoku(incomeYen){
   return Math.max(0, inc-koujo);
 }
 
-// 令和7・8年分の所得税基礎控除（合計所得655万円以下は時限的に引き上げ、656万円〜2,350万円以下は58万円）
+// 令和8・9年分の所得税基礎控除（国税庁「令和8年度の税制改正による源泉所得税関係の改正」で確認）。
+// 本則62万円に令和8・9年分限定の特例加算：合計所得489万円以下は104万円、489万超655万以下は67万円、
+// 655万超2,350万以下は62万円（加算なし）。2,350万円超の逓減区分は改正なし。
 function shotokuzeiKisoKoujo(goukei){
-  if(goukei<=1320000) return 950000;
-  if(goukei<=3360000) return 880000;
-  if(goukei<=4890000) return 680000;
-  if(goukei<=6550000) return 630000;
-  if(goukei<=23500000) return 580000;
+  if(goukei<=4890000) return 1040000;
+  if(goukei<=6550000) return 670000;
+  if(goukei<=23500000) return 620000;
   if(goukei<=24000000) return 480000;
   if(goukei<=24500000) return 320000;
   if(goukei<=25000000) return 160000;
@@ -941,7 +944,7 @@ function calc(){
   const hJuuminCourse = hJuumin2.total>0 ? '課税' : '非課税';
   const wJuuminCourse = wNone ? '-' : (wJuumin.total>0 ? '課税' : '非課税');
 
-  // ---- 所得税（令和7・8年分は合計所得に応じた時限的な基礎控除の上乗せがある） ----
+  // ---- 所得税（令和8・9年分は合計所得に応じた時限的な基礎控除の上乗せがある） ----
   const hHaiguushaKoujoZei = wCanSpouseKoujo ? haigushaKoujoTable(wGoukei, wIsRoujin, false) : 0;
   const hKisoKoujoZei = shotokuzeiKisoKoujo(hGoukei);
   const hKazeiZei = Math.max(0, hGoukei - hKisoKoujoZei - hHaiguushaKoujoZei - hShakaihoken);
@@ -1502,7 +1505,7 @@ function renderDetail(D){
     const shakaihokenKojin = side==='h' ? D.hShakaihoken : D.wShakaihoken;
     html += '<div class="dblock"><h3>所得税 <span class="result">'+fmt(zeigaku)+'</span></h3><table class="dtrace">'
       + row('合計所得金額', fmt(goukei))
-      + row('基礎控除（令和7・8年分は合計所得に応じた時限的な上乗せあり）', '－'+fmt(kisoKoujoZei), 'sub')
+      + row('基礎控除（令和8・9年分は合計所得に応じた時限的な上乗せあり）', '－'+fmt(kisoKoujoZei), 'sub')
       + (side==='h' ? row('配偶者控除', haiguushaKoujoZei>0 ? '－'+fmt(haiguushaKoujoZei) : '対象外', 'sub') : '')
       + row('社会保険料控除（本人負担分：国保按分・介護保険・社保料の合計）', '－'+fmt(shakaihokenKojin), 'sub')
       + row('課税所得', fmt(kazei), 'op')
