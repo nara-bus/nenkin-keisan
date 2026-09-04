@@ -876,13 +876,14 @@ function calc(){
     return {kintouHikazei, shotokuHikazei};
   }
 
-  function juuminzei(goukei, hantei, haigushaKoujo, shakaihokenKoujo){
+  function juuminzei(goukei, hantei, haigushaKoujo, shakaihokenKoujo, haigushaIsFullKoujo){
     const kintouwari = hantei.kintouHikazei ? 0 : 5500;
     let shotokuwari = 0;
     if(!hantei.shotokuHikazei){
       const kazei = Math.max(0, goukei - 430000 - haigushaKoujo - shakaihokenKoujo);
       let jinteki = 50000;
-      if(haigushaKoujo>0) jinteki += (wIsRoujin?100000:50000);
+      // 人的控除額の差の調整控除は「配偶者控除」のときのみ加算する（「配偶者特別控除」は対象外）
+      if(haigushaIsFullKoujo) jinteki += (wIsRoujin?100000:50000);
       let chousei;
       if(kazei<=2000000){ chousei = Math.round(jinteki*0.05); }
       else { chousei = Math.max(2500, Math.round((jinteki-(kazei-2000000))*0.05)); }
@@ -892,6 +893,7 @@ function calc(){
   }
 
   const hHaiguusha = wCanSpouseKoujo ? haigushaKoujoTable(wGoukei, wIsRoujin, true) : 0;
+  const hHaiguushaIsFullKoujo = wCanSpouseKoujo && wGoukei<=580000; // 住民税側のフル控除（配偶者控除）しきい値以下かどうか
   const hHantei = juuminHantei(hAge, hGoukei, wIsDependent);
 
   // ---- 介護保険料（65歳以上のみ第1号被保険者。段階判定は合計所得金額ベース） ----
@@ -920,15 +922,16 @@ function calc(){
     }
   }
 
-  // 段階判定には、住民税の均等割課税/非課税の判定が要るので、社会保険料控除を確定する前の
-  // 仮の住民税（社会保険料控除は概算値で先に判定）で課税・非課税を判定する
-  const hJuuminTemp = juuminzei(hGoukei, hHantei, hHaiguusha, kokuhoTotal+72000);
+  // 段階判定に必要なのは住民税の均等割課税/非課税の別だけなので、juuminHantei()の非課税判定を直接使う
+  // （仮の社会保険料控除額を使った仮の住民税計算はしない）
   const wHantei = (!wNone) ? juuminHantei(wAge, wGoukei, false) : {kintouHikazei:true, shotokuHikazei:true};
-  const wJuuminTemp = (!wNone) ? juuminzei(wGoukei, wHantei, 0, 0) : {kintouwari:0,shotokuwari:0,total:0};
-
-  const setaiZeninHikazei = (hJuuminTemp.kintouwari===0) && (wNone || wJuuminTemp.kintouwari===0);
-  const hKaigo = kaigoDankai(hAge, hGoukei, hIncome, hJuuminTemp.kintouwari>0, hJuuminTemp.kintouwari===0 && !setaiZeninHikazei ? true : (wJuuminTemp.kintouwari>0));
-  const wKaigo = wNone ? {label:'-',amount:0} : kaigoDankai(wAge, wGoukei, wIncome, wJuuminTemp.kintouwari>0, wJuuminTemp.kintouwari===0 && hJuuminTemp.kintouwari>0);
+  const hSelfKazei = !hHantei.kintouHikazei;
+  const wSelfKazei = (!wNone) && !wHantei.kintouHikazei;
+  const setaiZeninHikazei = hHantei.kintouHikazei && (wNone || wHantei.kintouHikazei);
+  const hSetaiHasKazeisha = (!hSelfKazei && !setaiZeninHikazei) ? true : wSelfKazei;
+  const wSetaiHasKazeisha = (!wSelfKazei && !setaiZeninHikazei) ? true : hSelfKazei;
+  const hKaigo = kaigoDankai(hAge, hGoukei, hIncome, hSelfKazei, hSetaiHasKazeisha);
+  const wKaigo = wNone ? {label:'-',amount:0} : kaigoDankai(wAge, wGoukei, wIncome, wSelfKazei, wSetaiHasKazeisha);
 
   // 給与から天引きされる社会保険料（健康保険・厚生年金、本人負担分）
   const hShahoRyou = hShaho ? shahoHonninFutan(hAge, hSalary) : {kenkou:0, nenkin:0, total:0};
@@ -938,8 +941,8 @@ function calc(){
   const hShakaihoken = hKokuhoBubun + hKaigo.amount + hShahoRyou.total;
   const wShakaihoken = wKokuhoBubun + wKaigo.amount + wShahoRyou.total;
 
-  const hJuumin2 = juuminzei(hGoukei, hHantei, hHaiguusha, hShakaihoken);
-  const wJuumin = (!wNone) ? juuminzei(wGoukei, wHantei, 0, wShakaihoken) : {kintouwari:0,shotokuwari:0,total:0};
+  const hJuumin2 = juuminzei(hGoukei, hHantei, hHaiguusha, hShakaihoken, hHaiguushaIsFullKoujo);
+  const wJuumin = (!wNone) ? juuminzei(wGoukei, wHantei, 0, wShakaihoken, false) : {kintouwari:0,shotokuwari:0,total:0};
 
   const hJuuminCourse = hJuumin2.total>0 ? '課税' : '非課税';
   const wJuuminCourse = wNone ? '-' : (wJuumin.total>0 ? '課税' : '非課税');
@@ -1188,8 +1191,8 @@ function calcIzoku(){
   const kokuho = kokuhoSingle(wAge, wZatsu, wKyuyo, wGoukei, wIncome, wSalary, wShaho, false);
   const wShahoRyou = wShaho ? shahoHonninFutan(wAge, wSalary) : {kenkou:0,nenkin:0,total:0};
 
-  const wJuuminTemp = juuminzeiSingle(wGoukei, kokuho.total+72000);
-  const kaigo = kaigoDankaiSingle(wAge, wZatsu, wGoukei, wIncome, wJuuminTemp.kintouwari>0);
+  const wHanteiSingle = juuminHanteiSingle(wGoukei);
+  const kaigo = kaigoDankaiSingle(wAge, wZatsu, wGoukei, wIncome, !wHanteiSingle.kintouHikazei);
 
   const wShakaihoken = kokuho.total + kaigo.amount + wShahoRyou.total;
   const wJuumin = juuminzeiSingle(wGoukei, wShakaihoken);
